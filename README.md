@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HACKIF
 
-## Getting Started
+Front-end do HACKIF, sistema web do 1º Hackathon do curso de Ciência da Computação do IFPR Campus Pinhais.
 
-First, run the development server:
+O projeto está em desenvolvimento e atualmente concentra a construção da interface inicial da Home, com uma estética tecnológica inspirada em sistemas digitais, grids, HUDs técnicos e na identidade visual do Instituto Federal.
+
+## O que já existe
+
+- Header com marca HACKIF, navegação, CTA e menu.
+- Hero principal com chamada do evento, CTAs, status e painel técnico.
+- Área central preparada para receber o futuro visual 3D do IF.
+- Barra de estatísticas do hackathon.
+- Seção conceitual com o fluxo da ideia até a solução real e um bloco sobre o HACKIF.
+
+## Tecnologias
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- App Router
+- lucide-react
+- framer-motion
+- next/font/google
+
+## Como rodar
+
+Entre na pasta do front-end:
+
+```bash
+cd frontend
+```
+
+Instale as dependências:
+
+```bash
+npm install
+```
+
+Rode o projeto:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Documentação
 
-## Learn More
+A documentação técnica e visual do projeto está em:
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[docs/FRONTEND.md](docs/FRONTEND.md)
