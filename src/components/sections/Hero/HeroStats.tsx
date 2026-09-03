@@ -38,7 +38,7 @@ export function HeroStats() {
               aria-hidden="true"
             />
             <div>
-              <p className="font-display text-[clamp(1.55rem,2vw,2.15rem)] font-semibold uppercase leading-none text-accent">
+              <p className="font-display text-[clamp(1.55rem,2vw,2.15rem)] font-semibold uppercase leading-[1.12] text-accent">
                 {stat.value}
               </p>
               <p className="mt-3 max-w-[170px] font-mono text-[0.68rem] font-semibold uppercase leading-5 tracking-[0.1em] text-foreground/55">

@@ -52,7 +52,7 @@ function ConceptProcess() {
               <div className="relative mb-4 h-[118px] w-full max-w-[138px]">
                 {/* TODO: inserir imagem 3D em {step.imageTodo} */}
               </div>
-              <h3 className="font-display text-[0.82rem] font-semibold uppercase leading-none text-accent">
+              <h3 className="font-display text-[0.82rem] font-semibold uppercase leading-[1.15] text-accent">
                 {step.title}
               </h3>
               <p className="mt-2 font-display text-[0.72rem] leading-5 text-foreground/52">

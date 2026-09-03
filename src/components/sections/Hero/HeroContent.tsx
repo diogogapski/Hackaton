@@ -19,7 +19,7 @@ export function HeroContent() {
       <div className="relative">
         <h1
           id="hero-title"
-          className="font-display text-[clamp(2.7rem,3.35vw,4.15rem)] font-semibold uppercase leading-[0.98] tracking-[0.025em]"
+          className="font-display text-[clamp(2.7rem,3.35vw,4.15rem)] font-semibold uppercase leading-[1.04] tracking-[0.025em]"
         >
           <span className="relative block text-foreground">
             {headlineLineOne}
