@@ -1,10 +1,10 @@
 const footerNavigation = [
-  { label: "Sobre", href: "#sobre" },
-  { label: "Desafios", href: "#desafios" },
-  { label: "Agenda", href: "#agenda" },
-  { label: "Como Participar", href: "#participar" },
-  { label: "Resultados", href: "#resultados" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Sobre", href: "/sobre" },
+  { label: "Desafios", href: "/hackathon#desafios" },
+  { label: "Agenda", href: "/hackathon#agenda" },
+  { label: "Como Participar", href: "/#participar" },
+  { label: "Resultados", href: "/resultados" },
+  { label: "FAQ", href: "/#faq" },
 ] as const;
 
 export function Footer() {

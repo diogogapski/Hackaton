@@ -1,4 +1,4 @@
-import { prisma } from "@/src/lib/db";
+import { contem, prisma } from "@/src/lib/db";
 import { parseQuery, route } from "@/src/lib/http";
 import { requireRole, teamWithMembersInclude } from "@/src/lib/auth";
 import { adminEquipesQuerySchema } from "@/src/server/equipes/schemas";
@@ -7,7 +7,7 @@ export const GET = route(async (request) => {
   await requireRole("ADMIN");
   const { hackathonId, situacao, q, page, pageSize } = parseQuery(request, adminEquipesQuerySchema);
 
-  const where = { hackathonId, situacao, ...(q && { nome: { contains: q } }) };
+  const where = { hackathonId, situacao, ...(q && { nome: contem(q) }) };
 
   const [total, equipes] = await prisma.$transaction([
     prisma.team.count({ where }),

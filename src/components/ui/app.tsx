@@ -43,7 +43,7 @@ export function Button({
     <button
       {...props}
       className={cx(
-        "inline-flex h-10 cursor-pointer items-center justify-center gap-2 px-5 font-sans text-[0.8rem] font-bold uppercase tracking-[0.03em] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        "inline-flex h-10 cursor-pointer items-center justify-center gap-2 whitespace-nowrap px-5 font-sans text-[0.8rem] font-bold uppercase tracking-[0.03em] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
         variant === "primary" && "bg-accent !text-[#050706] hover:bg-foreground",
         variant === "ghost" && "border border-foreground/20 bg-transparent text-foreground hover:border-accent hover:text-accent",
         variant === "danger" && "border border-if-red/60 bg-transparent text-if-red hover:bg-if-red hover:text-foreground",

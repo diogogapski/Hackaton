@@ -20,6 +20,12 @@ type Hackathon = {
   submissaoAberta: boolean;
 };
 
+const ROTULO_STATUS: Record<string, string> = {
+  INSCRICOES_ABERTAS: "inscrições abertas",
+  EM_ANDAMENTO: "em andamento",
+  ENCERRADO: "encerrado",
+};
+
 function Secao({ id, tag, titulo, children }: { id: string; tag: string; titulo: string; children: React.ReactNode }) {
   return (
     <section id={id} className="border-t border-foreground/10 py-14">
@@ -49,8 +55,8 @@ export default function HackathonPage() {
             <section className="grid gap-10 py-16 lg:grid-cols-[1.5fr_1fr]">
               <div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge tone="ok">{hackathon.status.replace("_", " ")}</Badge>
-                  {hackathon.inscricoesAbertas ? <Badge tone="ok">inscrições abertas</Badge> : null}
+                  <Badge tone="ok">{ROTULO_STATUS[hackathon.status] ?? hackathon.status}</Badge>
+                  {hackathon.status !== "INSCRICOES_ABERTAS" && hackathon.inscricoesAbertas ? <Badge tone="ok">inscrições abertas</Badge> : null}
                 </div>
                 <h1 className="mt-5 font-display text-[2.6rem] font-semibold uppercase leading-[0.95] tracking-[-0.03em] md:text-[3.6rem]">{hackathon.nome}</h1>
                 <p className="mt-5 max-w-2xl whitespace-pre-line text-[1.05rem] text-foreground/75">{hackathon.descricao}</p>

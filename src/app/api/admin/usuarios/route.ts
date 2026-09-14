@@ -1,4 +1,4 @@
-import { prisma } from "@/src/lib/db";
+import { contem, prisma } from "@/src/lib/db";
 import { parseQuery, route } from "@/src/lib/http";
 import { publicUserSelect, requireRole } from "@/src/lib/auth";
 import { adminUsuariosQuerySchema } from "@/src/server/identidade/schemas";
@@ -11,7 +11,7 @@ export const GET = route(async (request) => {
     vinculo,
     papel,
     situacao,
-    ...(q && { OR: [{ nome: { contains: q } }, { email: { contains: q } }] }),
+    ...(q && { OR: [{ nome: contem(q) }, { email: contem(q) }] }),
   };
 
   const [total, usuarios] = await prisma.$transaction([

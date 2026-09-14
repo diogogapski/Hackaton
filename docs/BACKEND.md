@@ -27,7 +27,9 @@ Scripts: `db:migrate`, `db:deploy`, `db:generate`, `db:seed`, `db:reset`, `db:st
 ```
 prisma/schema.prisma        schema único (Bloco A e Bloco B separados por seção)
 prisma/seed.ts
-src/lib/db.ts               PrismaClient (adapter escolhido pela DATABASE_URL)
+src/lib/db.ts               PrismaClient (adapter escolhido pela DATABASE_URL) e contem()
+src/lib/api-client.ts       fetch do front para a API
+src/components/ui/app.tsx   componentes das áreas logadas
 src/lib/http.ts             route(), HttpError, parseBody/parseQuery (Zod)
 src/lib/auth/               sessão JWT (cookie httpOnly), senha, rate limit, helpers
 src/server/identidade/      Dev 1 — cadastro, schemas, alterarPapel
@@ -93,19 +95,25 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 `GET /api/admin/avaliacoes`, `GET /api/admin/resultados`, `POST /api/admin/resultados/publicar`,
 `GET /api/admin/dashboard`.
 
-## Telas de teste
+## Telas
 
-Front funcional para exercitar a API (mesma identidade visual da Home). Áreas logadas são
-protegidas no layout (`getCurrentUser` + `redirect`).
+Front funcional sobre a API, com a mesma identidade visual da Home. Áreas logadas são protegidas no
+layout (`getCurrentUser` + `redirect`); menus por papel em `src/components/layout/navegacao.ts`.
 
 | Rota | Quem | O que faz |
 |---|---|---|
-| `/entrar` | todos | login por e-mail ou matrícula/SIAPE/CPF + vínculo; redireciona pelo papel |
+| `/cadastro` | público | cadastro de aluno, servidor ou egresso/externo, com aceite dos termos |
+| `/entrar` | público | login por e-mail ou matrícula/SIAPE/CPF + vínculo; redireciona pelo papel |
+| `/recuperar-senha`, `/redefinir-senha` | público | gera o link (console em dev) e define nova senha |
 | `/hackathon` | público | edição atual, desafios publicados, agenda, comunicados |
 | `/resultados` | público | pódio e ranking após publicação (notas só se `exibirNotasPublicas`) |
-| `/participante/projeto` | PARTICIPANTE | criar/entrar em equipe, cadastrar, editar e enviar o projeto |
-| `/jurado` e `/jurado/avaliacao/:id` | JURADO | projetos atribuídos, notas por critério, prévia ponderada |
+| `/conta` | logado | perfil (nome, e-mail, telefone) e troca de senha |
+| `/participante/equipe` | PARTICIPANTE | criar/entrar por código, convite, remover, transferir liderança, sair |
+| `/participante/projeto` | PARTICIPANTE | cadastrar, editar e enviar o projeto da equipe |
+| `/jurado`, `/jurado/avaliacao/:id` | JURADO | projetos atribuídos, notas por critério, prévia ponderada |
 | `/admin` | ADMIN | dashboard + seletor de edição (padrão: edição atual) |
+| `/admin/usuarios` | ADMIN | busca, filtros, papel e bloqueio |
+| `/admin/equipes` | ADMIN | integrantes, liderança, desclassificação |
 | `/admin/edicoes` | ADMIN | datas, limites de equipe, jurados por projeto, escala, visibilidade |
 | `/admin/desafios`, `/agenda`, `/criterios`, `/comunicados` | ADMIN | CRUD |
 | `/admin/projetos` | ADMIN | submissões, jurados atribuídos, desclassificar/reativar |
@@ -115,12 +123,13 @@ protegidas no layout (`getCurrentUser` + `redirect`).
 
 Roteiro ponta a ponta com o seed:
 
-1. `admin@hackif.dev` → Critérios/Edições: ajuste pesos e escala.
-2. `aluno@hackif.dev` → Projeto: edite e envie (a equipe do seed já tem 3 integrantes).
-3. `admin@hackif.dev` → Jurados: **Distribuir automaticamente**.
-4. `jurado@hackif.dev` → avalie o projeto.
-5. `admin@hackif.dev` → Avaliações → Resultados → **Publicar**.
-6. Sem login → `/resultados`.
+1. `/cadastro` → crie contas; em `/participante/equipe` crie uma equipe e entre com as outras pelo código.
+2. `admin@hackif.dev` → Critérios/Edições: ajuste pesos e escala.
+3. `aluno@hackif.dev` → Projeto: edite e envie (a equipe do seed já tem 3 integrantes).
+4. `admin@hackif.dev` → Jurados: **Distribuir automaticamente**.
+5. `jurado@hackif.dev` → avalie o projeto.
+6. `admin@hackif.dev` → Avaliações → Resultados → **Publicar**.
+7. Sem login → `/resultados`.
 
 ## Regras configuráveis (no banco, nada fixo no código)
 
@@ -146,6 +155,32 @@ Rate limit: tentativas malsucedidas contadas **por IP** na tabela `TentativaAces
 instâncias). Padrão: 20 falhas de login por IP a cada 15 min e 5 pedidos de recuperação por hora —
 ajustável por `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`.
 O limite é folgado porque laboratórios do campus costumam sair pelo mesmo IP.
+
+## Conformidade com os documentos de planejamento
+
+Conferido contra `00_PLANO_GERAL_BACKEND.md`, `01_BACKEND_DEV1_IDENTIDADE_EQUIPES.md` e
+`02_BACKEND_DEV2_HACKATHON_AVALIACAO.md`: todos os endpoints listados existem com os métodos citados,
+todas as tabelas e campos estão no schema e as regras de negócio estão cobertas por testes.
+
+Diferenças em relação aos documentos, decididas pela equipe durante a implementação:
+
+| Documento | Implementado | Motivo |
+|---|---|---|
+| Postgres local via Docker em dev | SQLite em dev, PostgreSQL só na Railway | decisão da equipe; schema portável |
+| `getUsuarioLogado()` / `getEquipeDoUsuario()` | `getCurrentUser()` / `getCurrentUserTeam()` (+ `requireAuth`, `requireRole`) | nomes definidos pela equipe |
+| Campos em snake_case | camelCase (`senhaHash`, `termosAceitosEm`…) | convenção do Prisma/TypeScript |
+| `Criterio.nota_min/nota_max` | `Hackathon.notaMin/notaMax` | todos os critérios usam a mesma escala |
+| Rate limit por IP + usuário (5/15 min) | por IP, persistido no banco (20/15 min, configurável) | decisão da equipe; laboratórios compartilham IP |
+| Recuperação dispara e-mail | token gerado; link só no console em dev | envio de e-mail fora do escopo |
+| Limite de 3–5 integrantes | `Hackathon.limiteMin/MaxIntegrantes` (padrão 3/5) | regras configuráveis no banco |
+
+Extras além dos documentos: `GET /api/auth/me`, `GET /api/comunicados`, `PUT /api/admin/usuarios/:id/situacao`,
+`GET|POST /api/admin/jurados/:id/atribuicoes` com remoção, `POST /api/admin/atribuicoes/distribuir`,
+`PUT /api/admin/projetos/:id`, `GET /api/health`, campo `User.telefone` (contato do perfil) e
+`User.anonimizadoEm` (reservado para a futura exclusão/anonimização de conta).
+
+Ainda em aberto (dependem da comissão): política de retenção/expurgo de dados pessoais e endpoint de
+anonimização de conta; validação externa de matrícula/SIAPE.
 
 ## SQLite (dev) e PostgreSQL (Railway)
 
@@ -185,5 +220,4 @@ Já configurado em `railway.json` (Railpack, `preDeployCommand: npm run db:deplo
 
 Validado localmente contra PostgreSQL (build de produção + `next start` + teste ponta a ponta).
 
-Diferença conhecida: buscas `contains` em `admin/usuarios` e `admin/equipes` ignoram maiúsculas no
-SQLite, mas diferenciam no Postgres.
+Buscas por texto usam `contem()` de `src/lib/db.ts`, que ignora maiúsculas nos dois bancos.

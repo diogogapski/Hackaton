@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useApi } from "@/src/hooks/useApi";
 import { api, detalhesDoErro } from "@/src/lib/api-client";
@@ -35,52 +36,27 @@ function deLinhas<K extends string>(texto: string, chave: K) {
     });
 }
 
-function EquipePanel({ equipe, hackathon, aoMudar }: { equipe: Equipe | null; hackathon: Hackathon | null; aoMudar: () => void }) {
-  const [nome, setNome] = useState("");
-  const [codigo, setCodigo] = useState("");
-  const [erro, setErro] = useState<unknown>(null);
-
-  async function acao(fn: () => Promise<unknown>) {
-    try {
-      setErro(null);
-      await fn();
-      aoMudar();
-    } catch (e) {
-      setErro(e);
-    }
-  }
-
-  if (equipe) {
+function EquipePanel({ equipe, hackathon }: { equipe: Equipe | null; hackathon: Hackathon | null }) {
+  if (!equipe) {
     return (
-      <Panel title={`Equipe ${equipe.nome}`} actions={<Badge tone={equipe.situacao === "INSCRITA" ? "ok" : "alerta"}>{equipe.situacao}</Badge>}>
-        <ul className="grid gap-1 text-[0.9rem]">
-          {equipe.membros.map((m) => (
-            <li key={m.user.id}>{m.user.nome}{m.user.id === equipe.liderId ? <span className="ml-2 font-mono text-[0.7rem] text-accent">LÍDER</span> : null}</li>
-          ))}
-        </ul>
-        <p className="mt-3 text-[0.8rem] text-muted">
-          {equipe.membros.length} integrante(s) · limite {hackathon?.limiteMinIntegrantes}–{hackathon?.limiteMaxIntegrantes}
-        </p>
-        {equipe.codigoConvite ? (
-          <p className="mt-3 text-[0.85rem]">Código de convite: <span className="font-mono font-semibold text-accent">{equipe.codigoConvite}</span></p>
-        ) : null}
+      <Panel title="Sem equipe">
+        <p className="mb-4 text-[0.88rem] text-muted">O projeto pertence à equipe. Crie uma equipe ou entre com um código de convite.</p>
+        <Link href="/participante/equipe" className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Montar equipe ↗</Link>
       </Panel>
     );
   }
 
   return (
-    <Panel title="Você ainda não tem equipe">
-      <div className="grid gap-5">
-        <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); acao(() => api("/api/equipe", { method: "POST", body: { nome } })); }}>
-          <Field label="Criar equipe"><Input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da equipe" /></Field>
-          <Button type="submit">Criar</Button>
-        </form>
-        <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); acao(() => api("/api/equipe/entrar", { method: "POST", body: { codigo } })); }}>
-          <Field label="Entrar com código"><Input required value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ex.: HACKIF01" /></Field>
-          <Button type="submit" variant="ghost">Entrar</Button>
-        </form>
-        {erro ? <Alert title={(erro as Error).message} /> : null}
-      </div>
+    <Panel title={`Equipe ${equipe.nome}`} actions={<Badge tone={equipe.situacao === "INSCRITA" ? "ok" : "alerta"}>{equipe.situacao}</Badge>}>
+      <ul className="grid gap-1 text-[0.9rem]">
+        {equipe.membros.map((m) => (
+          <li key={m.user.id}>{m.user.nome}{m.user.id === equipe.liderId ? <span className="ml-2 font-mono text-[0.7rem] text-accent">LÍDER</span> : null}</li>
+        ))}
+      </ul>
+      <p className="mt-3 text-[0.8rem] text-muted">
+        {equipe.membros.length} integrante(s) · limite {hackathon?.limiteMinIntegrantes}–{hackathon?.limiteMaxIntegrantes}
+      </p>
+      <Link href="/participante/equipe" className="mt-4 inline-block font-mono text-[0.72rem] uppercase text-accent hover:underline">Gerenciar equipe →</Link>
     </Panel>
   );
 }
@@ -160,7 +136,7 @@ export default function ParticipanteProjetoPage() {
 
       {!carregando && h ? (
         <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <EquipePanel equipe={equipe} hackathon={h} aoMudar={() => { equipeReq.reload(); projetoReq.reload(); }} />
+          <EquipePanel equipe={equipe} hackathon={h} />
 
           <Panel title={projeto ? "Editar projeto" : "Novo projeto"}>
             {!equipe ? <Alert title="Entre em uma equipe para cadastrar o projeto" /> : (

@@ -146,7 +146,7 @@ export function Header() {
         </nav>
 
         <Link
-          href="/#participar"
+          href="/cadastro"
           className="
     ml-9
     hidden
@@ -234,7 +234,7 @@ export function Header() {
             </div>
 
             <Link
-              href="/#participar"
+              href="/cadastro"
               onClick={() => setIsMenuOpen(false)}
               className="mt-8 inline-flex h-[48px] items-center justify-center bg-accent px-8 font-display text-[0.82rem] font-bold leading-none tracking-[0.015em] !text-[#050706] transition-all duration-200 hover:bg-foreground"
             >

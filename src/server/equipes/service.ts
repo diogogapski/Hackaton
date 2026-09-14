@@ -161,12 +161,15 @@ export async function atualizarEquipeAdmin(
   if (data.liderId) {
     const membro = await prisma.teamMember.findFirst({ where: { teamId, userId: data.liderId, saiuEm: null } });
     if (!membro) throw badRequest("O líder precisa ser membro ativo da equipe");
+  } else if (data.liderId === null) {
+    const ativos = await prisma.teamMember.count({ where: { teamId, saiuEm: null } });
+    if (ativos > 0) throw badRequest("A equipe não pode ficar sem líder enquanto houver integrantes");
   }
 
   await prisma.$transaction(async (tx) => {
     await tx.team.update({ where: { id: teamId }, data });
-    // Ao tirar de DESCLASSIFICADA sem informar situação, recalcula pelo número de membros.
-    if (data.situacao === undefined) await atualizarSituacao(tx, teamId);
+    // Fora DESCLASSIFICADA, a situação sempre segue o número de membros (EM_FORMACAO/INSCRITA).
+    if (data.situacao !== "DESCLASSIFICADA") await atualizarSituacao(tx, teamId);
   });
   return buscarEquipe(teamId);
 }

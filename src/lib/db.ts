@@ -14,6 +14,17 @@ function createClient() {
   return new PrismaClient({ adapter });
 }
 
+const usaPostgres = (process.env.DATABASE_URL ?? "").startsWith("postgres");
+
+/**
+ * Filtro "contém" sem diferenciar maiúsculas nos dois bancos: o SQLite já ignora
+ * maiúsculas no LIKE; no PostgreSQL é preciso `mode: "insensitive"` (inexistente no
+ * client SQLite, por isso o cast).
+ */
+export function contem(texto: string) {
+  return (usaPostgres ? { contains: texto, mode: "insensitive" } : { contains: texto }) as { contains: string };
+}
+
 // Reaproveita a instância entre hot reloads do `next dev`.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 

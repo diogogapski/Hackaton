@@ -144,10 +144,20 @@ npm run lint
 
 Executa a verificação com ESLint.
 
+## Áreas logadas e telas de acesso
+
+Além da Home e de `/sobre`, o front tem telas ligadas à API (detalhes em `docs/BACKEND.md`):
+
+- Acesso: `/cadastro`, `/entrar`, `/recuperar-senha`, `/redefinir-senha` — `src/components/layout/AuthLayout.tsx`
+- Público: `/hackathon`, `/resultados` — usam o `Header` e o `Footer` da Home
+- Participante, jurado, admin e `/conta` — `src/components/layout/AppShell.tsx`, menus em `navegacao.ts`
+
+Componentes compartilhados dessas telas ficam em `src/components/ui/app.tsx` (`PageHeader`, `Panel`,
+`Button`, `Field`, `Input`, `Badge`, `Alert`, `Table`…), com as mesmas cores e fontes da Home. Dados vêm
+de `useApi` (`src/hooks/useApi.ts`) e `api()` (`src/lib/api-client.ts`).
+
 ## Estado atual
 
-- O projeto ainda não possui backend.
-- Não há autenticação implementada.
-- O formulário de inscrição ainda não foi criado.
-- As imagens e vídeos 3D serão adicionados posteriormente.
-- O foco atual é a construção da interface inicial da Home.
+- Back-end, autenticação, inscrição, equipes, submissão, avaliação e resultados implementados.
+- As imagens e vídeos 3D da Home serão adicionados posteriormente.
+- Links da navegação ainda sem destino: `/regulamento` e a seção `#faq` da Home.

@@ -1,68 +1,65 @@
 # HACKIF
 
-Front-end do HACKIF, sistema web do 1º Hackathon do curso de Ciência da Computação do IFPR Campus Pinhais.
-
-O projeto está em desenvolvimento e atualmente concentra a construção da interface inicial da Home, com uma estética tecnológica inspirada em sistemas digitais, grids, HUDs técnicos e na identidade visual do Instituto Federal.
-
-## O que já existe
-
-- Header com marca HACKIF, navegação, CTA e menu.
-- Hero principal com chamada do evento, CTAs, status e painel técnico.
-- Área central preparada para receber o futuro visual 3D do IF.
-- Barra de estatísticas do hackathon.
-- Seção conceitual com o fluxo da ideia até a solução real e um bloco sobre o HACKIF.
+Sistema web do 1º Hackathon do curso de Ciência da Computação do IFPR Campus Pinhais: site público do
+evento, inscrição de participantes e equipes, submissão de projetos, avaliação por jurados e publicação
+de resultados.
 
 ## Tecnologias
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- App Router
-- lucide-react
-- framer-motion
-- next/font/google
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Tailwind CSS 4, lucide-react, framer-motion
+- API em Route Handlers (`src/app/api`)
+- Prisma 7 — SQLite em desenvolvimento, PostgreSQL em produção (Railway)
+- Autenticação por JWT em cookie httpOnly (jose) e senhas com bcrypt
+- Validação com Zod
+
+Requer Node.js 20.19 ou superior.
 
 ## Como rodar
 
-Entre na pasta do front-end:
-
 ```bash
-cd frontend
-```
-
-Instale as dependências:
-
-```bash
-npm install
-```
-
-Rode o projeto:
-
-```bash
+npm install                 # instala e gera o Prisma Client
+cp .env.example .env        # troque AUTH_SECRET por um valor aleatório
+npm run db:migrate          # cria prisma/dev.db com as migrations
+npm run db:seed             # dados de exemplo
 npm run dev
 ```
 
-Acesse:
+Acesse http://localhost:3000. Contas do seed (senha `Senha@123`):
 
-```text
-http://localhost:3000
-```
+| E-mail | Papel |
+|---|---|
+| `admin@hackif.dev` | Admin |
+| `jurado@hackif.dev` | Jurado |
+| `aluno@hackif.dev` | Participante, líder da "Equipe Exemplo" (convite `HACKIF01`) |
 
-## Back-end
+## Áreas
 
-API em `src/app/api` com Prisma + SQLite. Primeira execução:
+| Rota | Para quem |
+|---|---|
+| `/`, `/sobre`, `/hackathon`, `/resultados` | Público |
+| `/cadastro`, `/entrar`, `/recuperar-senha` | Acesso |
+| `/participante/equipe`, `/participante/projeto` | Participantes |
+| `/jurado` | Jurados |
+| `/admin` | Organização |
+| `/conta` | Qualquer usuário logado |
 
-```bash
-cp .env.example .env
-npm run db:migrate
-npm run db:seed
-npm run dev
-```
+## Scripts
 
-Detalhes, contrato entre os blocos e endpoints em [docs/BACKEND.md](docs/BACKEND.md).
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | servidor de desenvolvimento |
+| `npm run build` / `npm start` | build e servidor de produção |
+| `npm run lint` | ESLint |
+| `npm test` | testes unitários (ranking) |
+| `npm run db:migrate` | cria/aplica migrations no SQLite |
+| `npm run db:pg:sync` | gera schema e migration do PostgreSQL a partir do schema principal |
+| `npm run db:seed` / `npm run db:reset` | popula / recria o banco local |
+| `npm run db:studio` | Prisma Studio |
+| `npm run admin:create` | cria o primeiro admin em produção |
 
 ## Documentação
 
-A documentação técnica e visual do projeto está em:
-
-[docs/FRONTEND.md](docs/FRONTEND.md)
+- [docs/BACKEND.md](docs/BACKEND.md) — API, contrato entre os blocos, regras configuráveis, deploy na Railway
+- [docs/FRONTEND.md](docs/FRONTEND.md) — identidade visual e componentes
+- [docs/00_PLANO_GERAL_BACKEND.md](docs/00_PLANO_GERAL_BACKEND.md) — planejamento e divisão entre os devs
