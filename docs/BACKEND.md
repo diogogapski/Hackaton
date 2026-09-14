@@ -88,10 +88,39 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 
 **Admin (Dev 2):** `GET|POST /api/admin/hackathons`, `GET|PUT /api/admin/hackathons/:id`,
 `GET|POST /api/admin/{desafios|agenda|criterios|comunicados}`, `PUT|DELETE /api/admin/{...}/:id`,
-`GET /api/admin/projetos`, `GET|POST /api/admin/jurados`, `GET|POST /api/admin/jurados/:id/atribuicoes`,
+`GET /api/admin/projetos`, `PUT /api/admin/projetos/:id` (`DESCLASSIFICADO`/`ATIVO`), `GET|POST /api/admin/jurados`, `GET|POST /api/admin/jurados/:id/atribuicoes`,
 `DELETE /api/admin/jurados/:id/atribuicoes/:projetoId`, `POST /api/admin/atribuicoes/distribuir`,
 `GET /api/admin/avaliacoes`, `GET /api/admin/resultados`, `POST /api/admin/resultados/publicar`,
 `GET /api/admin/dashboard`.
+
+## Telas de teste
+
+Front funcional para exercitar a API (mesma identidade visual da Home). Áreas logadas são
+protegidas no layout (`getCurrentUser` + `redirect`).
+
+| Rota | Quem | O que faz |
+|---|---|---|
+| `/entrar` | todos | login por e-mail ou matrícula/SIAPE/CPF + vínculo; redireciona pelo papel |
+| `/hackathon` | público | edição atual, desafios publicados, agenda, comunicados |
+| `/resultados` | público | pódio e ranking após publicação (notas só se `exibirNotasPublicas`) |
+| `/participante/projeto` | PARTICIPANTE | criar/entrar em equipe, cadastrar, editar e enviar o projeto |
+| `/jurado` e `/jurado/avaliacao/:id` | JURADO | projetos atribuídos, notas por critério, prévia ponderada |
+| `/admin` | ADMIN | dashboard + seletor de edição (padrão: edição atual) |
+| `/admin/edicoes` | ADMIN | datas, limites de equipe, jurados por projeto, escala, visibilidade |
+| `/admin/desafios`, `/agenda`, `/criterios`, `/comunicados` | ADMIN | CRUD |
+| `/admin/projetos` | ADMIN | submissões, jurados atribuídos, desclassificar/reativar |
+| `/admin/jurados` | ADMIN | autorizar jurado, distribuir automaticamente, atribuir/remover manualmente |
+| `/admin/avaliacoes` | ADMIN | progresso por jurado e por projeto |
+| `/admin/resultados` | ADMIN | prévia do ranking, publicar/despublicar |
+
+Roteiro ponta a ponta com o seed:
+
+1. `admin@hackif.dev` → Critérios/Edições: ajuste pesos e escala.
+2. `aluno@hackif.dev` → Projeto: edite e envie (a equipe do seed já tem 3 integrantes).
+3. `admin@hackif.dev` → Jurados: **Distribuir automaticamente**.
+4. `jurado@hackif.dev` → avalie o projeto.
+5. `admin@hackif.dev` → Avaliações → Resultados → **Publicar**.
+6. Sem login → `/resultados`.
 
 ## Regras configuráveis (no banco, nada fixo no código)
 

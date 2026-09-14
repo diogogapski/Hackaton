@@ -137,6 +137,10 @@ export const publicarResultadosSchema = z.object({
   publicado: z.boolean().default(true),
 });
 
+export const adminProjetoSituacaoSchema = z.object({
+  situacao: z.enum(["DESCLASSIFICADO", "ATIVO"]),
+});
+
 export const adminProjetosQuerySchema = z.object({
   hackathonId: z.string().optional(),
   situacao: z.enum(["RASCUNHO", "ENVIADO", "DESCLASSIFICADO"]).optional(),

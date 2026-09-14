@@ -7,10 +7,10 @@ import { useEffect, useState } from "react";
 
 const navigationItems = [
   { label: "SOBRE", href: "/sobre" },
-  { label: "DESAFIOS", href: "/#desafios" },
-  { label: "AGENDA", href: "/#agenda" },
+  { label: "DESAFIOS", href: "/hackathon#desafios" },
+  { label: "AGENDA", href: "/hackathon#agenda" },
   { label: "COMO PARTICIPAR", href: "/#participar" },
-  { label: "RESULTADOS", href: "/#resultados" },
+  { label: "RESULTADOS", href: "/resultados" },
   { label: "REGULAMENTO", href: "/regulamento" },
   { label: "FAQ", href: "/#faq" },
 ] as const;
