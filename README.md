@@ -48,6 +48,19 @@ Acesse:
 http://localhost:3000
 ```
 
+## Back-end
+
+API em `src/app/api` com Prisma + SQLite. Primeira execução:
+
+```bash
+cp .env.example .env
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+Detalhes, contrato entre os blocos e endpoints em [docs/BACKEND.md](docs/BACKEND.md).
+
 ## Documentação
 
 A documentação técnica e visual do projeto está em:

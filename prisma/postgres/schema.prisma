@@ -1,0 +1,314 @@
+// ARQUIVO GERADO por scripts/prisma-postgres.mjs — edite prisma/schema.prisma.
+
+// Schema único compartilhado pelos dois blocos do back-end.
+//
+// Portabilidade SQLite (dev) -> PostgreSQL (Railway):
+// - Não usar tipos nativos (@db.*), listas escalares (String[]) nem SQL cru.
+// - Listas (links, tecnologias, arquivos) são Json.
+// - Para trocar de banco basta mudar `provider` abaixo e gerar migrations novas
+//   (ver docs/BACKEND.md).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// Enums compartilhados
+// ============================================================
+
+enum Vinculo {
+  ALUNO
+  SERVIDOR
+  EGRESSO
+  EXTERNO
+}
+
+enum Papel {
+  PARTICIPANTE
+  JURADO
+  ADMIN
+}
+
+enum SituacaoUsuario {
+  ATIVO
+  BLOQUEADO
+}
+
+enum SituacaoEquipe {
+  EM_FORMACAO
+  INSCRITA
+  DESCLASSIFICADA
+}
+
+enum StatusHackathon {
+  RASCUNHO
+  INSCRICOES_ABERTAS
+  EM_ANDAMENTO
+  ENCERRADO
+}
+
+enum SituacaoProjeto {
+  RASCUNHO
+  ENVIADO
+  DESCLASSIFICADO
+}
+
+// ============================================================
+// Bloco A — Dev Back 1: identidade, autenticação e equipes
+// ============================================================
+
+model User {
+  id              String          @id @default(uuid())
+  nome            String
+  email           String          @unique
+  senhaHash       String
+  vinculo         Vinculo
+  matricula       String?         @unique
+  siape           String?         @unique
+  cpf             String?         @unique // sensível (LGPD) — sempre opcional
+  curso           String?
+  telefone        String?
+  papel           Papel           @default(PARTICIPANTE)
+  situacao        SituacaoUsuario @default(ATIVO)
+  termosAceitosEm DateTime?
+  anonimizadoEm   DateTime? // reservado para exclusão/anonimização futura
+  criadoEm        DateTime        @default(now())
+  atualizadoEm    DateTime        @updatedAt
+
+  passwordResets   PasswordReset[]
+  equipesLideradas Team[]          @relation("LiderEquipe")
+  participacoes    TeamMember[]
+
+  // Bloco B (somente relações; jurado é User com papel JURADO)
+  atribuicoes AvaliacaoAtribuicao[]
+  avaliacoes  Avaliacao[]
+  comunicados Comunicado[]
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Team {
+  id            String         @id @default(uuid())
+  nome          String
+  hackathonId   String
+  liderId       String?
+  situacao      SituacaoEquipe @default(EM_FORMACAO)
+  codigoConvite String?        @unique
+  criadoEm      DateTime       @default(now())
+  atualizadoEm  DateTime       @updatedAt
+
+  hackathon Hackathon    @relation(fields: [hackathonId], references: [id], onDelete: Restrict)
+  lider     User?        @relation("LiderEquipe", fields: [liderId], references: [id], onDelete: SetNull)
+  membros   TeamMember[]
+  projeto   Projeto?
+
+  @@unique([hackathonId, nome])
+  @@index([liderId])
+}
+
+// Tentativas malsucedidas por IP (rate limit persistido: vale entre instâncias e reinícios).
+// `acao` separa os limites, ex.: "login", "recuperar-senha".
+model TentativaAcesso {
+  id       String   @id @default(uuid())
+  acao     String
+  ip       String
+  criadoEm DateTime @default(now())
+
+  @@index([acao, ip, criadoEm])
+  @@index([criadoEm])
+}
+
+// Participação com histórico: membro ativo = saiuEm nulo (soft-delete).
+model TeamMember {
+  id       String    @id @default(uuid())
+  teamId   String
+  userId   String
+  entrouEm DateTime  @default(now())
+  saiuEm   DateTime?
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([teamId, saiuEm])
+  @@index([userId, saiuEm])
+}
+
+// ============================================================
+// Bloco B — Dev Back 2: edição, conteúdo, projetos e avaliação
+// ============================================================
+
+model Hackathon {
+  id                      String          @id @default(uuid())
+  nome                    String
+  descricao               String
+  dataInicio              DateTime
+  dataFim                 DateTime
+  inscricaoInicio         DateTime?
+  inscricaoFim            DateTime?
+  prazoSubmissao          DateTime? // se nulo, usa dataFim
+  status                  StatusHackathon @default(RASCUNHO)
+  limiteMinIntegrantes    Int             @default(3)
+  limiteMaxIntegrantes    Int             @default(5)
+  juradosPorProjeto       Int             @default(3)
+  permitirEdicaoAvaliacao Boolean         @default(true)
+  // Escala única para todos os critérios da edição (notas comparáveis entre critérios).
+  notaMin                 Float           @default(0)
+  notaMax                 Float           @default(10)
+  regulamentoUrl          String?
+  regulamentoTexto        String?
+  resultadosPublicados    Boolean         @default(false)
+  resultadosPublicadosEm  DateTime?
+  exibirNotasPublicas     Boolean         @default(false)
+  criadoEm                DateTime        @default(now())
+  atualizadoEm            DateTime        @updatedAt
+
+  equipes     Team[]
+  desafios    Desafio[]
+  agenda      AgendaItem[]
+  projetos    Projeto[]
+  criterios   Criterio[]
+  comunicados Comunicado[]
+
+  @@index([status])
+}
+
+model Desafio {
+  id           String   @id @default(uuid())
+  hackathonId  String
+  titulo       String
+  descricao    String
+  categoria    String?
+  responsavel  String?
+  publicado    Boolean  @default(false)
+  ordem        Int      @default(0)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  projetos  Projeto[]
+
+  @@index([hackathonId, publicado])
+}
+
+model AgendaItem {
+  id            String    @id @default(uuid())
+  hackathonId   String
+  titulo        String
+  horarioInicio DateTime
+  horarioFim    DateTime?
+  local         String?
+  observacoes   String?
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+
+  @@index([hackathonId, horarioInicio])
+}
+
+model Projeto {
+  id           String          @id @default(uuid())
+  teamId       String          @unique
+  hackathonId  String
+  desafioId    String?
+  nome         String
+  descricao    String
+  solucao      String?
+  tecnologias  Json // string[]
+  links        Json // { tipo: string, url: string }[]
+  arquivos     Json // { nome: string, url: string }[]
+  situacao     SituacaoProjeto @default(RASCUNHO)
+  enviadoEm    DateTime?
+  criadoEm     DateTime        @default(now())
+  atualizadoEm DateTime        @updatedAt
+
+  team        Team                  @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  hackathon   Hackathon             @relation(fields: [hackathonId], references: [id], onDelete: Restrict)
+  desafio     Desafio?              @relation(fields: [desafioId], references: [id], onDelete: SetNull)
+  atribuicoes AvaliacaoAtribuicao[]
+  avaliacoes  Avaliacao[]
+
+  @@index([hackathonId, situacao])
+}
+
+model Criterio {
+  id                  String   @id @default(uuid())
+  hackathonId         String
+  nome                String
+  descricao           String?
+  peso                Float    @default(1)
+  ordem              Int      @default(0)
+  // Desempate: critérios com prioridade menor desempatam primeiro; nulo = não desempata.
+  prioridadeDesempate Int?
+  criadoEm            DateTime @default(now())
+  atualizadoEm        DateTime @updatedAt
+
+  hackathon  Hackathon   @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  avaliacoes Avaliacao[]
+
+  @@index([hackathonId])
+}
+
+model AvaliacaoAtribuicao {
+  id          String    @id @default(uuid())
+  juradoId    String
+  projetoId   String
+  concluida   Boolean   @default(false)
+  concluidaEm DateTime?
+  criadoEm    DateTime  @default(now())
+
+  jurado  User    @relation(fields: [juradoId], references: [id], onDelete: Restrict)
+  projeto Projeto @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+
+  @@unique([juradoId, projetoId])
+  @@index([projetoId])
+}
+
+model Avaliacao {
+  id         String   @id @default(uuid())
+  projetoId  String
+  juradoId   String
+  criterioId String
+  nota       Float
+  comentario String?
+  avaliadoEm DateTime @default(now())
+
+  projeto  Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  jurado   User     @relation(fields: [juradoId], references: [id], onDelete: Restrict)
+  criterio Criterio @relation(fields: [criterioId], references: [id], onDelete: Cascade)
+
+  @@unique([projetoId, juradoId, criterioId])
+  @@index([juradoId])
+}
+
+model Comunicado {
+  id           String    @id @default(uuid())
+  hackathonId  String
+  autorId      String?
+  titulo       String
+  conteudo     String
+  publicadoEm  DateTime? // nulo = rascunho
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  autor     User?     @relation(fields: [autorId], references: [id], onDelete: SetNull)
+
+  @@index([hackathonId, publicadoEm])
+}
