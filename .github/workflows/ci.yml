@@ -33,3 +33,13 @@ jobs:
 
       - name: Build (inclui checagem do schema PostgreSQL)
         run: npm run build
+
+      - name: Teste de fluxo ponta a ponta (banco vazio)
+        env:
+          ADMIN_EMAIL: admin@ci.dev
+          ADMIN_SENHA: Admin@2026!
+        run: |
+          npm run admin:create
+          npm start > servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/api/health && break; sleep 1; done
+          npm run test:fluxo

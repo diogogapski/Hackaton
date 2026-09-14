@@ -20,7 +20,17 @@ Contas do seed (senha `Senha@123`): `admin@hackif.dev`, `jurado@hackif.dev`, `ju
 `servidor@hackif.dev`, `externo@hackif.dev`.
 
 Scripts: `db:migrate`, `db:deploy`, `db:generate`, `db:seed`, `db:reset`, `db:studio`,
-`db:pg:sync`, `db:pg:check`, `admin:create`.
+`db:pg:sync`, `db:pg:check`, `admin:create`, `test`, `test:fluxo`.
+
+## Testes
+
+| Comando | Cobre |
+|---|---|
+| `npm test` | cálculo de ranking: média ponderada, desempate por critério e por ordem de envio, empates |
+| `npm run test:fluxo` | fluxo inteiro da API sobre banco vazio (~150 verificações): edição, conteúdo, cadastro, login, perfil, recuperação de senha, equipes, submissão, jurados, avaliação, apuração, publicação, admin, prazos e sessão; também falha se alguma resposta expuser hash ou senha |
+
+O GitHub Actions (`.github/workflows/ci.yml`) roda lint, testes, build e o `test:fluxo` a cada push.
+Para rodar o fluxo localmente, veja as instruções no topo de `scripts/teste-fluxo.mjs`.
 
 ## Estrutura
 
@@ -107,6 +117,7 @@ layout (`getCurrentUser` + `redirect`); menus por papel em `src/components/layou
 | `/recuperar-senha`, `/redefinir-senha` | público | gera o link (console em dev) e define nova senha |
 | `/hackathon` | público | edição atual, desafios publicados, agenda, comunicados |
 | `/resultados` | público | pódio e ranking após publicação (notas só se `exibirNotasPublicas`) |
+| `/regulamento` | público | `Hackathon.regulamentoTexto` e link para `regulamentoUrl` |
 | `/conta` | logado | perfil (nome, e-mail, telefone) e troca de senha |
 | `/participante/equipe` | PARTICIPANTE | criar/entrar por código, convite, remover, transferir liderança, sair |
 | `/participante/projeto` | PARTICIPANTE | cadastrar, editar e enviar o projeto da equipe |
@@ -160,7 +171,8 @@ O limite é folgado porque laboratórios do campus costumam sair pelo mesmo IP.
 
 Conferido contra `00_PLANO_GERAL_BACKEND.md`, `01_BACKEND_DEV1_IDENTIDADE_EQUIPES.md` e
 `02_BACKEND_DEV2_HACKATHON_AVALIACAO.md`: todos os endpoints listados existem com os métodos citados,
-todas as tabelas e campos estão no schema e as regras de negócio estão cobertas por testes.
+todas as tabelas e campos estão no schema e as regras de negócio são verificadas por `npm run test:fluxo`.
+O seed atende aos dois checklists (1 hackathon, 2 desafios, 1 projeto, critérios, 1 admin, alunos e 1 externo).
 
 Diferenças em relação aos documentos, decididas pela equipe durante a implementação:
 
@@ -179,8 +191,12 @@ Extras além dos documentos: `GET /api/auth/me`, `GET /api/comunicados`, `PUT /a
 `PUT /api/admin/projetos/:id`, `GET /api/health`, campo `User.telefone` (contato do perfil) e
 `User.anonimizadoEm` (reservado para a futura exclusão/anonimização de conta).
 
-Ainda em aberto (dependem da comissão): política de retenção/expurgo de dados pessoais e endpoint de
-anonimização de conta; validação externa de matrícula/SIAPE.
+Ainda em aberto:
+
+- dependem da comissão: política de retenção/expurgo de dados pessoais e endpoint de anonimização de
+  conta; validação externa de matrícula/SIAPE;
+- front (Dev Front): a Home ainda é estática — o doc 02 prevê `GET /api/hackathon/atual` também para ela
+  (datas, status, desafios); `/hackathon`, `/resultados` e `/regulamento` já consomem a API.
 
 ## SQLite (dev) e PostgreSQL (Railway)
 
@@ -209,8 +225,8 @@ Já configurado em `railway.json` (Railpack, `preDeployCommand: npm run db:deplo
 2. Variáveis do serviço da aplicação:
    - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (precisa existir também no build, para gerar o client Postgres)
    - `AUTH_SECRET` = valor aleatório longo
-   - `APP_URL` = URL pública do serviço
-   - opcionais: `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`
+   - opcional: `APP_URL` (só compõe o link de redefinição de senha exibido no console em desenvolvimento)
+   - opcionais de rate limit: `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`
 3. Deploy. As migrations rodam no pre-deploy; `/api/health` responde 200 quando o banco está acessível.
 4. Crie o primeiro admin (o seed é bloqueado em produção). Localmente, com a URL **pública** do Postgres:
 

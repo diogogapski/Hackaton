@@ -37,8 +37,8 @@ Acesse http://localhost:3000. Contas do seed (senha `Senha@123`):
 
 | Rota | Para quem |
 |---|---|
-| `/`, `/sobre`, `/hackathon`, `/resultados` | Público |
-| `/cadastro`, `/entrar`, `/recuperar-senha` | Acesso |
+| `/`, `/sobre`, `/hackathon`, `/resultados`, `/regulamento` | Público |
+| `/cadastro`, `/entrar`, `/recuperar-senha`, `/redefinir-senha` | Acesso |
 | `/participante/equipe`, `/participante/projeto` | Participantes |
 | `/jurado` | Jurados |
 | `/admin` | Organização |
@@ -52,6 +52,7 @@ Acesse http://localhost:3000. Contas do seed (senha `Senha@123`):
 | `npm run build` / `npm start` | build e servidor de produção |
 | `npm run lint` | ESLint |
 | `npm test` | testes unitários (ranking) |
+| `npm run test:fluxo` | fluxo completo da API sobre banco vazio (ver `docs/BACKEND.md`) |
 | `npm run db:migrate` | cria/aplica migrations no SQLite |
 | `npm run db:pg:sync` | gera schema e migration do PostgreSQL a partir do schema principal |
 | `npm run db:seed` / `npm run db:reset` | popula / recria o banco local |
@@ -62,4 +63,4 @@ Acesse http://localhost:3000. Contas do seed (senha `Senha@123`):
 
 - [docs/BACKEND.md](docs/BACKEND.md) — API, contrato entre os blocos, regras configuráveis, deploy na Railway
 - [docs/FRONTEND.md](docs/FRONTEND.md) — identidade visual e componentes
-- [docs/00_PLANO_GERAL_BACKEND.md](docs/00_PLANO_GERAL_BACKEND.md) — planejamento e divisão entre os devs
+- [docs/00_PLANO_GERAL_BACKEND.md](docs/00_PLANO_GERAL_BACKEND.md), [01](docs/01_BACKEND_DEV1_IDENTIDADE_EQUIPES.md) e [02](docs/02_BACKEND_DEV2_HACKATHON_AVALIACAO.md) — planejamento e divisão entre os devs

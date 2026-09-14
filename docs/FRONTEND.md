@@ -31,27 +31,24 @@ Fontes disponíveis:
 ```text
 src/
   app/
-    globals.css
-    layout.tsx
-    page.tsx
+    layout.tsx, page.tsx, globals.css   Home e layout raiz
+    sobre/                              página Sobre
+    hackathon/ resultados/ regulamento/ páginas públicas ligadas à API
+    cadastro/ entrar/ recuperar-senha/ redefinir-senha/
+    conta/                              perfil e senha (qualquer papel)
+    participante/ jurado/ admin/        áreas logadas (layout protege por papel)
+    api/                                back-end (ver docs/BACKEND.md)
   components/
-    layout/
-      Header.tsx
-    sections/
-      Hero/
-        Hero.tsx
-        HeroContent.tsx
-        HeroVisual.tsx
-        HeroSystemInfo.tsx
-        HeroStats.tsx
-      Concept/
-        ConceptSection.tsx
-    ui/
-  data/
-  hooks/
-  services/
-  types/
-  utils/
+    layout/      Header, Footer, AppShell, AuthLayout, navegacao.ts
+    sections/    Hero, Concept, home/ e about/ (Home e Sobre)
+    ui/          app.tsx — componentes das telas logadas
+    admin/       ResourceManager (CRUD), seletor de edição
+    participante/
+  hooks/         useApi
+  lib/           db, http, auth, api-client
+  server/        regras de negócio do back-end
+  generated/     Prisma Client (gerado, fora do git)
+  data/ services/ types/ utils/
 ```
 
 Arquivos públicos:
@@ -61,6 +58,7 @@ public/
   icons/
   images/
   logos/
+  models/
   videos/
 ```
 
@@ -149,7 +147,7 @@ Executa a verificação com ESLint.
 Além da Home e de `/sobre`, o front tem telas ligadas à API (detalhes em `docs/BACKEND.md`):
 
 - Acesso: `/cadastro`, `/entrar`, `/recuperar-senha`, `/redefinir-senha` — `src/components/layout/AuthLayout.tsx`
-- Público: `/hackathon`, `/resultados` — usam o `Header` e o `Footer` da Home
+- Público: `/hackathon`, `/resultados`, `/regulamento` — usam o `Header` e o `Footer` da Home
 - Participante, jurado, admin e `/conta` — `src/components/layout/AppShell.tsx`, menus em `navegacao.ts`
 
 Componentes compartilhados dessas telas ficam em `src/components/ui/app.tsx` (`PageHeader`, `Panel`,
@@ -160,4 +158,5 @@ de `useApi` (`src/hooks/useApi.ts`) e `api()` (`src/lib/api-client.ts`).
 
 - Back-end, autenticação, inscrição, equipes, submissão, avaliação e resultados implementados.
 - As imagens e vídeos 3D da Home serão adicionados posteriormente.
-- Links da navegação ainda sem destino: `/regulamento` e a seção `#faq` da Home.
+- A Home ainda é estática: o doc 02 prevê `GET /api/hackathon/atual` também para ela (datas, status, desafios).
+- Link da navegação ainda sem destino: a seção `#faq` da Home.
