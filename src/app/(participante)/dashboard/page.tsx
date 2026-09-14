@@ -61,7 +61,7 @@ export default function DashboardPage() {
       {hackathon.error ? <Alert title={hackathon.error.message} /> : null}
 
       {h && !carregando ? (
-        <div className="grid gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4 border-l-2 border-accent bg-accent/10 px-5 py-4">
             <div>
               <p className="font-mono text-[0.68rem] uppercase tracking-[0.1em] text-accent">Próximo passo</p>

@@ -494,7 +494,7 @@ csvRes = await fetch(BASE + "/api/admin/relatorio/participantes");
 check("CSV sem sessão de admin: 401", csvRes.status === 401, csvRes.status);
 r = await adm("GET", "/api/admin/relatorio/csv-inexistente"); check("tipo de relatório inexistente: 404", r.status === 404, r);
 
-r = await adm("GET", "/api/admin/lgpd/descarte"); check("descarte bloqueado sem prazo definido", r.json?.liberado === false && /retencaoDadosDias/.test(r.json.motivo), r.json);
+r = await adm("GET", "/api/admin/lgpd/descarte"); check("descarte bloqueado sem prazo definido", r.json?.liberado === false && /retenção de dados/.test(r.json.motivo), r.json);
 await adm("PUT", `/api/admin/hackathons/${H}`, { retencaoDadosDias: 30 });
 r = await adm("GET", "/api/admin/lgpd/descarte"); check("descarte bloqueado antes do prazo vencer", r.json?.liberado === false && /não venceu/.test(r.json.motivo), r.json);
 await adm("PUT", `/api/admin/hackathons/${H}`, { retencaoDadosDias: 0, dataInicio: dias(-3), dataFim: dias(-2) });

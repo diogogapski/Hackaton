@@ -93,7 +93,7 @@ export default function GerenciarEquipePage() {
             </Table>
           </Panel>
 
-          <div className="grid content-start gap-6">
+          <div className="grid min-w-0 content-start gap-6">
             {souLider ? (
               <Panel title="Convite">
                 <p className="text-[0.88rem] text-muted">Compartilhe o código com quem vai entrar na equipe.</p>

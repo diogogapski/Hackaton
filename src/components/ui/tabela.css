@@ -1,0 +1,58 @@
+/* Tabela vira lista de cartões no celular (ver Table.tsx). */
+@media (max-width: 639.98px) {
+  .tabela-responsiva {
+    overflow-x: visible;
+  }
+  .tabela-responsiva table,
+  .tabela-responsiva tbody,
+  .tabela-responsiva tr {
+    display: block;
+    width: 100%;
+  }
+  .tabela-responsiva thead {
+    display: none;
+  }
+  .tabela-responsiva tbody > tr {
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    padding: 0.35rem 0;
+    margin-bottom: 0.75rem;
+  }
+  .tabela-responsiva tbody > tr > td {
+    display: block;
+    position: relative;
+    min-height: 2rem;
+    overflow-wrap: break-word;
+    padding: 0.4rem 0.85rem 0.4rem 7.5rem !important;
+  }
+  .tabela-responsiva tbody > tr > td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0.85rem;
+    top: 0.55rem;
+    width: 6.25rem;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--foreground) 50%, transparent);
+    line-height: 1.3;
+  }
+  /* Grupos de botões quebram linha e alinham à esquerda dentro do cartão. */
+  .tabela-responsiva tbody > tr > td {
+    text-align: left !important;
+  }
+  .tabela-responsiva tbody > tr > td > .flex {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  /* Colunas sem título (ações) e células mescladas ocupam a largura toda. */
+  .tabela-responsiva tbody > tr > td[data-label=""],
+  .tabela-responsiva tbody > tr > td:not([data-label]) {
+    padding-left: 0.85rem !important;
+  }
+  .tabela-responsiva tbody > tr > td[data-label=""]::before,
+  .tabela-responsiva tbody > tr > td:not([data-label])::before {
+    content: none;
+  }
+}

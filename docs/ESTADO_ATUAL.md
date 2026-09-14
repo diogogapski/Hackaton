@@ -85,6 +85,13 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
   `/admin/operacao` (limite de equipes, comunicação da agenda, retenção, convite de jurado, correção de
   nota, descarte LGPD), `/admin/presenca` e `/admin/relatorio`.
 
+### Responsividade
+- Todas as telas do sistema funcionam de 320px a desktop, sem rolagem horizontal.
+- `Table` (`src/components/ui/Table.tsx` + `tabela.css`): abaixo de 640px cada linha vira um cartão com o
+  nome da coluna ao lado do valor; colunas sem título (ações) ocupam a largura toda.
+- `Panel` e `Stat` com `min-w-0`; botões quebram linha no celular; grades de números empilham.
+- Exceção conhecida: o título grande de `/sobre` (front original do `e70fa69`) passa 37px em telas de 320px.
+
 ### Infraestrutura
 - Prisma 7: SQLite em dev, PostgreSQL em produção (`prisma.config.ts` escolhe pela `DATABASE_URL`).
 - Railway: `railway.json` (migrations no pre-deploy, healthcheck `/api/health`); `npm run admin:create`.
@@ -94,11 +101,12 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 | Verificação | Resultado |
 |---|---|
 | Lint, testes unitários (25) | ok |
-| `test:fluxo` em SQLite | 223/223 |
-| `test:fluxo` em PostgreSQL embutido (Windows) | 213/216 localmente (o banco de teste em WIN1252 recusava "→"; trocado por "->") |
-| CI GitHub Actions (SQLite + PostgreSQL 16) no commit `54edcdc` | verde |
-| Navegador: telas de operação | 9/9 |
+| Build de produção | ok |
+| `test:fluxo` em SQLite (build de produção, banco vazio) | 216/216 |
+| CI GitHub Actions (SQLite + PostgreSQL 16) | verde |
+| Navegador: telas de operação — desktop e celular (375px) | 9/9 e 9/9 |
 | Navegador: 31 páginas do planejamento | 40/40 |
+| Varredura de overflow em 320, 375 e 768px (41 rotas, 3 papéis) | 0 problemas (exceto `/sobre` em 320px) |
 | Front do commit `e70fa69` | idêntico |
 
 ## O que falta
@@ -106,14 +114,6 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 ### Próximos passos técnicos
 1. Na Railway: PostgreSQL + variáveis `DATABASE_URL` (também no build), `AUTH_SECRET`, `APP_URL`
    (usada no link do convite de jurado); depois `npm run admin:create`.
-
-### Depende de decisão da comissão
-- Validação externa de matrícula e SIAPE.
-- Acesso próprio para a coordenação do curso (hoje: PARTICIPANTE, JURADO, ADMIN).
-- Mais de uma rodada de avaliação (triagem e final).
-- Canal de notificação além do painel (e-mail não é enviado).
-- Dados extras de participante (restrição alimentar, camiseta) e upload real de arquivos (hoje são links).
-- Valor padrão de `retencaoDadosDias` e `limiteEquipes` (hoje nulos = sem descarte / sem limite).
 
 ### Front (Dev Front)
 - Home: integrar dados reais da edição (datas, local, cronograma, desafios, vencedores).

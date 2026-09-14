@@ -227,8 +227,7 @@ tamanho de equipe, equipes inscritas, desafios publicados, vencedores após a pu
 regras configuradas (`src/server/home/dados.ts`). A consulta roda por requisição (`connection()`), nunca
 no build, e sem banco a Home volta aos textos padrão.
 
-Ainda em aberto (dependem da comissão): política de retenção/expurgo de dados pessoais (prazo para
-anonimizar contas inativas automaticamente) e validação externa de matrícula/SIAPE.
+Retenção de dados: `Hackathon.retencaoDadosDias` + descarte manual em `/admin/operacao`.
 
 ## SQLite (dev) e PostgreSQL (Railway)
 

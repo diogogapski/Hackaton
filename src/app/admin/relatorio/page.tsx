@@ -49,7 +49,7 @@ export default function AdminRelatorioPage() {
       {error ? <Alert title={error.message} /> : null}
 
       {data ? (
-        <div className="grid gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-6">
           <Panel title={data.edicao.nome} actions={<Badge tone="ok">{data.edicao.status}</Badge>}>
             <p className="text-[0.9rem] text-muted">
               {formatarData(data.edicao.dataInicio)} → {formatarData(data.edicao.dataFim)}{data.edicao.local ? ` · ${data.edicao.local}` : ""}

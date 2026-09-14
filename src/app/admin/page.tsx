@@ -43,7 +43,7 @@ export default function AdminDashboardPage() {
       {error ? <Alert title={error.message} lines={["Crie uma edição em Hackathons para começar."]} /> : null}
 
       {data ? (
-        <div className="grid gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-6">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             <Stat label="Participantes" value={data.usuariosParticipantes} sub={`${data.participantesEmEquipes} em equipes`} />
             <Stat label="Equipes" value={data.equipes.total} sub={porSituacao(data.equipes.porSituacao)} />

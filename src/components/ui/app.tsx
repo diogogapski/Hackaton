@@ -20,7 +20,7 @@ export function PageHeader({ tag, title, description, actions }: { tag: string; 
 
 export function Panel({ title, children, className, actions }: { title?: string; children: ReactNode; className?: string; actions?: ReactNode }) {
   return (
-    <section className={cx("border border-foreground/10 bg-foreground/[0.02] p-5 md:p-6", className)}>
+    <section className={cx("min-w-0 border border-foreground/10 bg-foreground/[0.02] p-5 md:p-6", className)}>
       {title || actions ? (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           {title ? (
@@ -43,7 +43,7 @@ export function Button({
     <button
       {...props}
       className={cx(
-        "inline-flex h-10 cursor-pointer items-center justify-center gap-2 whitespace-nowrap px-5 font-sans text-[0.8rem] font-bold uppercase tracking-[0.03em] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+        "inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 px-5 py-2 text-center sm:h-10 sm:whitespace-nowrap sm:py-0 font-sans text-[0.8rem] font-bold uppercase tracking-[0.03em] transition-colors disabled:cursor-not-allowed disabled:opacity-40",
         variant === "primary" && "bg-accent !text-[#050706] hover:bg-foreground",
         variant === "ghost" && "border border-foreground/20 bg-transparent text-foreground hover:border-accent hover:text-accent",
         variant === "danger" && "border border-if-red/60 bg-transparent text-if-red hover:bg-if-red hover:text-foreground",
@@ -121,7 +121,7 @@ export function Loading() {
 
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
   return (
-    <div className="border border-foreground/10 p-4">
+    <div className="min-w-0 break-words border border-foreground/10 p-4">
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted">{label}</p>
       <p className="mt-2 font-display text-[2rem] font-semibold leading-none text-foreground">{value}</p>
       {sub ? <div className="mt-2 text-[0.78rem] text-muted">{sub}</div> : null}
@@ -129,22 +129,7 @@ export function Stat({ label, value, sub }: { label: string; value: ReactNode; s
   );
 }
 
-export function Table({ head, children }: { head: string[]; children: ReactNode }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-left text-[0.88rem]">
-        <thead>
-          <tr className="border-b border-foreground/15">
-            {head.map((h) => (
-              <th key={h} className="px-3 py-2 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-foreground/50">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="[&>tr]:border-b [&>tr]:border-foreground/8 [&_td]:px-3 [&_td]:py-2.5 [&_td]:align-top">{children}</tbody>
-      </table>
-    </div>
-  );
-}
+export { Table } from "./Table";
 
 export const formatarData = (valor?: string | null) =>
   valor ? new Date(valor).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";

@@ -83,7 +83,7 @@ export default function AvaliacaoPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <div className="grid content-start gap-6">
+        <div className="grid min-w-0 content-start gap-6">
           <Panel title="Projeto">
             <p className="whitespace-pre-line text-[0.92rem] text-foreground/85">{projeto.descricao}</p>
             {projeto.solucao ? (

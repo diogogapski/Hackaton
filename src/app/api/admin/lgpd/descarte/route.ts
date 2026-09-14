@@ -16,7 +16,7 @@ export const GET = route(async (request) => {
     prazo,
     liberado,
     motivo: liberado ? null : hackathon.retencaoDadosDias == null
-      ? "Defina retencaoDadosDias na edição"
+      ? "Defina a retenção de dados pessoais (dias) nas configurações da edição"
       : hackathon.status !== "ENCERRADO" ? "A edição precisa estar ENCERRADA" : "O prazo de retenção ainda não venceu",
     total: contas.length,
     contas,

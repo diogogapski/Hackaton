@@ -96,7 +96,7 @@ export default function AdminJuradosPage() {
           </Field>
           <ul className="mt-4 grid gap-2">
             {candidatos.data?.usuarios.map((u) => (
-              <li key={u.id} className="flex items-center justify-between gap-3 border-b border-foreground/8 pb-2 text-[0.88rem]">
+              <li key={u.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-foreground/8 pb-2 text-[0.88rem]">
                 <span>{u.nome} <span className="text-muted">· {u.email}</span></span>
                 <Button className="h-8 px-3" onClick={() => autorizar(u)}>Autorizar</Button>
               </li>
@@ -113,7 +113,7 @@ export default function AdminJuradosPage() {
             {projetos.data?.projetos.map((p) => {
               const atr = p.atribuicoes.find((a) => a.juradoId === jurado.id);
               return (
-                <div key={p.id} className="flex items-center justify-between gap-3 border border-foreground/10 px-3 py-2">
+                <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 border border-foreground/10 px-3 py-2">
                   <span className="text-[0.88rem]">
                     <strong>{p.nome}</strong> <span className="text-muted">· {p.team.nome}</span>
                     {atr?.concluida ? <span className="ml-2"><Badge tone="ok">avaliado</Badge></span> : null}

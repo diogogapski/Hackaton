@@ -57,7 +57,7 @@ export default function MinhaEquipePage() {
             </Table>
           </Panel>
 
-          <div className="grid content-start gap-6">
+          <div className="grid min-w-0 content-start gap-6">
             <Panel title="Situação da inscrição">
               <dl className="grid gap-3 text-[0.9rem]">
                 <div><dt className="font-mono text-[0.68rem] uppercase text-muted">Situação</dt><dd>{equipe.situacao}</dd></div>

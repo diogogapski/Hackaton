@@ -83,7 +83,7 @@ export default function AdminEquipesPage() {
 
             <ul className="grid gap-2">
               {e.membros.map((m) => (
-                <li key={m.id} className="flex items-center justify-between gap-3 border-b border-foreground/8 pb-2 text-[0.88rem]">
+                <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-foreground/8 pb-2 text-[0.88rem]">
                   <span>
                     {m.user.nome} {m.user.id === e.liderId ? <Badge tone="ok">líder</Badge> : null}
                     <span className="block text-[0.75rem] text-muted">{m.user.email} · {m.user.vinculo}</span>

@@ -53,8 +53,8 @@ export default function AdminPresencaPage() {
       {error ? <Alert title={error.message} /> : null}
 
       {data ? (
-        <div className="grid gap-6">
-          <div className="grid grid-cols-3 gap-3">
+        <div className="grid min-w-0 grid-cols-1 gap-6">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Stat label="Participantes em equipes" value={data.total} />
             <Stat label="Presentes" value={data.presentes} />
             <Stat label="Ausentes" value={data.total - data.presentes} />
