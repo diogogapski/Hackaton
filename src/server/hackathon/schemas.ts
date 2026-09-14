@@ -17,6 +17,7 @@ const hackathonCampos = z.object({
   inscricaoFim: data.nullable().optional(),
   prazoSubmissao: data.nullable().optional(),
   status: z.enum(["RASCUNHO", "INSCRICOES_ABERTAS", "EM_ANDAMENTO", "ENCERRADO"]).optional(),
+  local: opcional(200),
   limiteMinIntegrantes: z.number().int().min(1).max(50).optional(),
   limiteMaxIntegrantes: z.number().int().min(1).max(50).optional(),
   juradosPorProjeto: z.number().int().min(1).max(50).optional(),
@@ -24,6 +25,7 @@ const hackathonCampos = z.object({
   notaMin: z.number().min(0).max(1000).optional(),
   notaMax: z.number().min(0).max(1000).optional(),
   exibirNotasPublicas: z.boolean().optional(),
+  exibirEquipesPublicas: z.boolean().optional(),
   regulamentoUrl: z.url().nullable().optional(),
   regulamentoTexto: opcional(50000),
 });
@@ -71,6 +73,7 @@ export const agendaCreateSchema = z.object({
   horarioFim: data.nullable().optional(),
   local: opcional(160),
   observacoes: opcional(2000),
+  cancelado: z.boolean().optional(),
 });
 export const agendaUpdateSchema = agendaCreateSchema.omit({ hackathonId: true }).partial().strict();
 

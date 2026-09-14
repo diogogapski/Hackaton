@@ -1,8 +1,8 @@
-// Menus das áreas logadas, por papel.
+// Menus das áreas logadas, por papel. Rotas conforme o planejamento de páginas (31 telas).
 
 export const navAdmin = [
   { label: "Dashboard", href: "/admin" },
-  { label: "Edições", href: "/admin/edicoes" },
+  { label: "Hackathons", href: "/admin/hackathons" },
   { label: "Usuários", href: "/admin/usuarios" },
   { label: "Equipes", href: "/admin/equipes" },
   { label: "Desafios", href: "/admin/desafios" },
@@ -13,20 +13,22 @@ export const navAdmin = [
   { label: "Avaliações", href: "/admin/avaliacoes" },
   { label: "Resultados", href: "/admin/resultados" },
   { label: "Comunicados", href: "/admin/comunicados" },
-  { label: "Conta", href: "/conta" },
+  { label: "Perfil", href: "/perfil" },
 ];
 
 export const navJurado = [
-  { label: "Meus projetos", href: "/jurado" },
-  { label: "Conta", href: "/conta" },
+  { label: "Painel", href: "/jurado" },
+  { label: "Agenda", href: "/agenda" },
+  { label: "Perfil", href: "/perfil" },
 ];
 
 export const navParticipante = [
-  { label: "Equipe", href: "/participante/equipe" },
-  { label: "Projeto", href: "/participante/projeto" },
-  { label: "Edição", href: "/hackathon" },
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Minha equipe", href: "/equipe" },
+  { label: "Projeto", href: "/projeto" },
+  { label: "Agenda", href: "/agenda" },
   { label: "Resultados", href: "/resultados" },
-  { label: "Conta", href: "/conta" },
+  { label: "Perfil", href: "/perfil" },
 ];
 
 export const navPorPapel = { ADMIN: navAdmin, JURADO: navJurado, PARTICIPANTE: navParticipante } as const;

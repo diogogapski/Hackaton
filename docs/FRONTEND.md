@@ -31,24 +31,27 @@ Fontes disponíveis:
 ```text
 src/
   app/
-    layout.tsx, page.tsx, globals.css   Home e layout raiz
-    sobre/                              página Sobre
-    hackathon/ resultados/ regulamento/ páginas públicas ligadas à API
-    cadastro/ entrar/ recuperar-senha/ redefinir-senha/
-    conta/                              perfil e senha (qualquer papel)
-    participante/ jurado/ admin/        áreas logadas (layout protege por papel)
-    api/                                back-end (ver docs/BACKEND.md)
+    globals.css
+    layout.tsx
+    page.tsx
   components/
-    layout/      Header, Footer, AppShell, AuthLayout, navegacao.ts
-    sections/    Hero, Concept, home/ (inclui FaqSection) e about/ (Home e Sobre)
-    ui/          app.tsx — componentes das telas logadas
-    admin/       ResourceManager (CRUD), seletor de edição
-    participante/
-  hooks/         useApi
-  lib/           db, http, auth, api-client
-  server/        regras de negócio do back-end
-  generated/     Prisma Client (gerado, fora do git)
-  data/ services/ types/ utils/
+    layout/
+      Header.tsx
+    sections/
+      Hero/
+        Hero.tsx
+        HeroContent.tsx
+        HeroVisual.tsx
+        HeroSystemInfo.tsx
+        HeroStats.tsx
+      Concept/
+        ConceptSection.tsx
+    ui/
+  data/
+  hooks/
+  services/
+  types/
+  utils/
 ```
 
 Arquivos públicos:
@@ -58,7 +61,6 @@ public/
   icons/
   images/
   logos/
-  models/
   videos/
 ```
 
@@ -142,20 +144,10 @@ npm run lint
 
 Executa a verificação com ESLint.
 
-## Áreas logadas e telas de acesso
-
-Além da Home e de `/sobre`, o front tem telas ligadas à API (detalhes em `docs/BACKEND.md`):
-
-- Acesso: `/cadastro`, `/entrar`, `/recuperar-senha`, `/redefinir-senha` — `src/components/layout/AuthLayout.tsx`
-- Público: `/hackathon`, `/resultados`, `/regulamento` — usam o `Header` e o `Footer` da Home
-- Participante, jurado, admin e `/conta` — `src/components/layout/AppShell.tsx`, menus em `navegacao.ts`
-
-Componentes compartilhados dessas telas ficam em `src/components/ui/app.tsx` (`PageHeader`, `Panel`,
-`Button`, `Field`, `Input`, `Badge`, `Alert`, `Table`…), com as mesmas cores e fontes da Home. Dados vêm
-de `useApi` (`src/hooks/useApi.ts`) e `api()` (`src/lib/api-client.ts`).
-
 ## Estado atual
 
-- Back-end, autenticação, inscrição, equipes, submissão, avaliação e resultados implementados.
-- As imagens e vídeos 3D da Home serão adicionados posteriormente.
-- A Home é um Server Component que lê a edição vigente (`src/server/home/dados.ts`) e repassa às seções: Hero (status, duração, tamanho de equipe, equipes inscritas), Próximo Desafio, Vencedores, FAQ (`#faq`) e CTA final. Sem edição ou sem banco, cada seção mantém o texto original.
+- O projeto ainda não possui backend.
+- Não há autenticação implementada.
+- O formulário de inscrição ainda não foi criado.
+- As imagens e vídeos 3D serão adicionados posteriormente.
+- O foco atual é a construção da interface inicial da Home.

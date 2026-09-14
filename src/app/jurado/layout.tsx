@@ -6,7 +6,7 @@ import { navJurado } from "@/src/components/layout/navegacao";
 
 export default async function JuradoLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
-  if (!user) redirect("/entrar?next=/jurado");
+  if (!user) redirect("/login?next=/jurado");
   if (user.papel !== "JURADO") redirect("/");
 
   return (

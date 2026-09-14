@@ -1,17 +1,13 @@
 import { Crosshair } from "lucide-react";
-import { doisDigitos, type DadosHome } from "@/src/server/home/dados";
 
-export function HeroSystemInfo({ dados }: { dados: DadosHome }) {
-  const systemItems = [
-    { label: "CAMPUS:", value: "PINHAIS" },
-    { label: "DURATION:", value: dados ? `${dados.duracaoHoras}H` : "24 - 48H" },
-    { label: "TEAMS:", value: dados?.equipesInscritas ? doisDigitos(dados.equipesInscritas) : "15 - 25" },
-    {
-      label: "TEAM SIZE:",
-      value: dados ? `${doisDigitos(dados.limiteMinIntegrantes)} - ${doisDigitos(dados.limiteMaxIntegrantes)}` : "03 - 05",
-    },
-  ];
+const systemItems = [
+  { label: "CAMPUS:", value: "PINHAIS" },
+  { label: "DURATION:", value: "24 - 48H" },
+  { label: "TEAMS:", value: "15 - 25" },
+  { label: "TEAM SIZE:", value: "03 - 05" },
+] as const;
 
+export function HeroSystemInfo() {
   return (
     <aside className="relative z-10 flex h-full flex-col border-l border-accent/15 pl-5 font-mono">
       <p className="mb-10 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-accent">

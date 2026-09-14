@@ -74,7 +74,7 @@ export const Textarea = (props: TextareaHTMLAttributes<HTMLTextAreaElement>) => 
 
 export const Select = (props: SelectHTMLAttributes<HTMLSelectElement>) => <select {...props} className={cx(campoBase, props.className)} />;
 
-export function Checkbox({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+export function Checkbox({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
   return (
     <label className="flex cursor-pointer items-center gap-2.5 text-[0.9rem] text-foreground/85">
       <input type="checkbox" {...props} className="h-4 w-4 accent-[#b6ff00]" />

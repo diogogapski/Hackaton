@@ -6,7 +6,7 @@ import { navParticipante } from "@/src/components/layout/navegacao";
 
 export default async function ParticipanteLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
-  if (!user) redirect("/entrar?next=/participante/equipe");
+  if (!user) redirect("/login");
   if (user.papel !== "PARTICIPANTE") redirect("/");
 
   return (

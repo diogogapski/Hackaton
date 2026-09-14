@@ -27,7 +27,8 @@ function Retorno({ r }: { r: Resultado }) {
   return null;
 }
 
-export default function ContaPage() {
+/** Meu perfil (planejamento, página 13): dados pessoais, vínculo, contato, senha e exclusão da conta. */
+export default function PerfilPage() {
   const router = useRouter();
   const { data, loading, error, reload } = useApi<{ user: Perfil }>("/api/perfil");
   const [form, setForm] = useState({ nome: "", email: "", telefone: "" });
@@ -91,7 +92,7 @@ export default function ContaPage() {
 
   return (
     <>
-      <PageHeader tag="conta" title="Minha conta" description="Documentos de identificação (matrícula, SIAPE, CPF) não podem ser alterados pelo próprio usuário." />
+      <PageHeader tag="perfil" title="Meu perfil" description="Documentos de identificação (matrícula, SIAPE, CPF) não podem ser alterados pelo próprio usuário." />
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
         <Panel title="Perfil">
           <form onSubmit={salvarPerfil} className="grid gap-4 md:grid-cols-2">

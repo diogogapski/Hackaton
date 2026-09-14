@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Footer } from "@/src/components/layout/Footer";
 import { Header } from "@/src/components/layout/Header";
+import { BarraSistema } from "@/src/components/publico/BarraSistema";
 import { useApi } from "@/src/hooks/useApi";
 import { Alert, Badge, Empty, formatarData, Loading } from "@/src/components/ui/app";
 
@@ -16,6 +17,7 @@ type Hackathon = {
   limiteMinIntegrantes: number;
   limiteMaxIntegrantes: number;
   regulamentoUrl: string | null;
+  local: string | null;
   inscricoesAbertas: boolean;
   submissaoAberta: boolean;
 };
@@ -41,11 +43,13 @@ export default function HackathonPage() {
   const desafios = useApi<{ desafios: { id: string; titulo: string; descricao: string; categoria: string | null }[] }>("/api/desafios");
   const agenda = useApi<{ agenda: { id: string; titulo: string; horarioInicio: string; horarioFim: string | null; local: string | null }[] }>("/api/agenda");
   const comunicados = useApi<{ comunicados: { id: string; titulo: string; conteudo: string; publicadoEm: string }[] }>("/api/comunicados");
+  const equipes = useApi<{ publico: boolean; equipes: { id: string; nome: string; integrantes: number; desafio: string | null; projetoEnviado: boolean }[] }>("/api/equipes");
   const hackathon = h.data?.hackathon;
 
   return (
     <>
       <Header />
+      <BarraSistema />
       <main className="mx-auto max-w-[1440px] px-6 md:px-10">
         {h.loading && !h.data ? <div className="py-16"><Loading /></div> : null}
         {h.error ? <div className="py-16"><Alert title={h.error.message} /></div> : null}
@@ -61,7 +65,7 @@ export default function HackathonPage() {
                 <h1 className="mt-5 font-display text-[2.6rem] font-semibold uppercase leading-[0.95] tracking-[-0.03em] md:text-[3.6rem]">{hackathon.nome}</h1>
                 <p className="mt-5 max-w-2xl whitespace-pre-line text-[1.05rem] text-foreground/75">{hackathon.descricao}</p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href="/entrar" className="inline-flex h-12 items-center bg-accent px-7 text-[0.82rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Área do participante ↗</Link>
+                  <Link href="/login" className="inline-flex h-12 items-center bg-accent px-7 text-[0.82rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Área do participante ↗</Link>
                   {hackathon.regulamentoUrl ? (
                     <a href={hackathon.regulamentoUrl} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center border border-foreground/20 px-7 text-[0.82rem] font-bold uppercase hover:border-accent hover:text-accent">Regulamento</a>
                   ) : null}
@@ -70,6 +74,7 @@ export default function HackathonPage() {
               <dl className="grid content-start gap-px border border-foreground/10 bg-foreground/10">
                 {[
                   ["Evento", `${formatarData(hackathon.dataInicio)} → ${formatarData(hackathon.dataFim)}`],
+                  ["Local", hackathon.local ?? "a definir"],
                   ["Inscrições até", formatarData(hackathon.inscricaoFim)],
                   ["Equipes", `${hackathon.limiteMinIntegrantes} a ${hackathon.limiteMaxIntegrantes} integrantes`],
                   ["Submissão", hackathon.submissaoAberta ? "aberta" : "fechada"],
@@ -110,6 +115,22 @@ export default function HackathonPage() {
                 ))}
               </ol>
             </Secao>
+
+            {equipes.data?.publico ? (
+              <Secao id="equipes" tag="equipes" titulo={`Equipes inscritas (${equipes.data.equipes.length})`}>
+                {equipes.data.equipes.length === 0 ? <Empty>Nenhuma equipe inscrita ainda</Empty> : null}
+                <div className="grid gap-px border border-foreground/10 bg-foreground/10 sm:grid-cols-2 lg:grid-cols-3">
+                  {equipes.data.equipes.map((e) => (
+                    <div key={e.id} className="bg-background p-4">
+                      <p className="font-display text-[1.05rem] font-semibold uppercase">{e.nome}</p>
+                      <p className="mt-1 font-mono text-[0.72rem] uppercase text-muted">
+                        {e.integrantes} integrantes{e.desafio ? ` · ${e.desafio}` : ""}{e.projetoEnviado ? " · projeto enviado" : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </Secao>
+            ) : null}
 
             <Secao id="comunicados" tag="comunicados" titulo="Comunicados">
               {comunicados.data?.comunicados.length === 0 ? <Empty>Nenhum comunicado</Empty> : null}

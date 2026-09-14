@@ -7,10 +7,10 @@ import { useEffect, useState } from "react";
 
 const navigationItems = [
   { label: "SOBRE", href: "/sobre" },
-  { label: "DESAFIOS", href: "/hackathon#desafios" },
-  { label: "AGENDA", href: "/hackathon#agenda" },
+  { label: "DESAFIOS", href: "/#desafios" },
+  { label: "AGENDA", href: "/#agenda" },
   { label: "COMO PARTICIPAR", href: "/#participar" },
-  { label: "RESULTADOS", href: "/resultados" },
+  { label: "RESULTADOS", href: "/#resultados" },
   { label: "REGULAMENTO", href: "/regulamento" },
   { label: "FAQ", href: "/#faq" },
 ] as const;
@@ -146,7 +146,7 @@ export function Header() {
         </nav>
 
         <Link
-          href="/cadastro"
+          href="/#participar"
           className="
     ml-9
     hidden
@@ -234,7 +234,7 @@ export function Header() {
             </div>
 
             <Link
-              href="/cadastro"
+              href="/#participar"
               onClick={() => setIsMenuOpen(false)}
               className="mt-8 inline-flex h-[48px] items-center justify-center bg-accent px-8 font-display text-[0.82rem] font-bold leading-none tracking-[0.015em] !text-[#050706] transition-all duration-200 hover:bg-foreground"
             >

@@ -59,6 +59,7 @@ async function main() {
         inscricaoFim: dias(15),
         prazoSubmissao: dias(22),
         status: "INSCRICOES_ABERTAS",
+        local: "IFPR Campus Pinhais",
         limiteMinIntegrantes: 3,
         limiteMaxIntegrantes: 5,
         juradosPorProjeto: 2,

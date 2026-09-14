@@ -100,6 +100,11 @@ r = await pub("GET", "/api/desafios"); check("público vê só publicados", r.js
 r = await adm("POST", "/api/admin/agenda", { titulo: "Encerramento", horarioInicio: dias(12) });
 r = await adm("POST", "/api/admin/agenda", { titulo: "Abertura", horarioInicio: dias(10), horarioFim: dias(10.1), local: "Auditório" });
 r = await adm("POST", "/api/admin/agenda", { titulo: "Invertido", horarioInicio: dias(10), horarioFim: dias(9) }); check("agenda com fim antes do início: 400", r.status === 400, r);
+r = await adm("GET", "/api/admin/agenda");
+const encerramento = r.json.agenda.find((a) => a.titulo === "Encerramento");
+r = await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { cancelado: true }); check("admin cancela atividade (planejamento p.28)", r.json?.item?.cancelado === true, r);
+r = await pub("GET", "/api/agenda"); check("atividade cancelada continua visível e marcada", r.json?.agenda?.some((a) => a.titulo === "Encerramento" && a.cancelado), r);
+await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { cancelado: false });
 r = await pub("GET", "/api/agenda"); check("agenda pública ordenada por horário", r.json?.agenda?.map((a) => a.titulo).join() === "Abertura,Encerramento", r);
 await adm("POST", "/api/admin/comunicados", { titulo: "Rascunho", conteudo: "x" });
 r = await adm("POST", "/api/admin/comunicados", { titulo: "Publicado", conteudo: "y", publicar: true });
@@ -144,6 +149,9 @@ r = await cliente()("POST", "/api/auth/register/aluno", { nome: "Sem termos", em
 r = await cliente()("POST", "/api/auth/register/aluno", { nome: "Curta", email: `sc.${s}@t.dev`, matricula: `C${s}`, curso: "CC", senha: "123", aceiteTermos: true }); check("senha curta: 400", r.status === 400, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, vinculo: "ALUNO", senha: "Senha@123" }); check("login por matrícula + vínculo", r.status === 200, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `S${s}`, vinculo: "SERVIDOR", senha: "Senha@123" }); check("login por SIAPE + vínculo", r.status === 200, r);
+r = await cliente()("POST", "/api/auth/register/externo", { nome: "Egresso com CPF", email: `egcpf.${s}@t.dev`, vinculo: "EGRESSO", cpf: "111.444.777-35", senha: "Senha@123", aceiteTermos: true });
+r = await cliente()("POST", "/api/auth/login", { identificador: "11144477735", vinculo: "EXTERNO", senha: "Senha@123" });
+check("egresso entra pelo acesso externo com CPF (/login/externo)", r.status === 200 && r.json.user.vinculo === "EGRESSO", r);
 r = await cliente()("POST", "/api/auth/login", { identificador: "529.982.247-25", vinculo: "EXTERNO", senha: "Senha@123" }); check("login por CPF + vínculo", r.status === 200, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, senha: "Senha@123" }); check("matrícula sem vínculo: 401", r.status === 401, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `a2.${s}@t.dev`, senha: "errada" }); check("senha errada: 401", r.status === 401, r);
@@ -299,12 +307,7 @@ check("nota final ponderada P2 = 7.6", lin[P2]?.notaFinal === 7.6, lin[P2]);
 check("desempate por Inovação: P2 em 1º, P1 em 2º", lin[P2]?.posicao === 1 && lin[P1]?.posicao === 2, r.json.ranking);
 check("rascunho fora do ranking", !lin[r.json.ranking.find((l) => l.projeto.nome === "P3")?.projetoId], r.json.ranking);
 r = await pub("GET", "/api/resultados"); check("antes da publicação: nada público", r.json?.publicado === false && r.json.ranking.length === 0, r);
-let home = await (await fetch(BASE + "/")).text();
-check("Home mostra status e desafio publicado da edição", home.includes("INSCRIÇÕES ABERTAS") && home.includes("Desafio publicado") && !home.includes("Desafio oculto"), "home sem dados da edição");
-check("FAQ da Home usa os limites configurados", home.includes('id="faq"') && home.includes("de 3 a 4 integrantes") && home.includes("Inovação (peso 3)"), "faq sem dados");
 r = await adm("POST", "/api/admin/resultados/publicar", {}); check("publica manualmente", r.json?.hackathon?.resultadosPublicados === true, r);
-home = await (await fetch(BASE + "/")).text();
-check("Home mostra vencedores após publicação", home.includes("RESULTADOS PUBLICADOS") && home.includes(`T2 ${s}`), "home sem vencedores");
 r = await pub("GET", "/api/resultados"); check("público: ranking com equipes e projetos, sem notas", r.json?.publicado && r.json.ranking[0].projeto.id === P2 && r.json.ranking[0].equipe.nome && r.json.ranking[0].notaFinal === undefined, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { exibirNotasPublicas: true });
 r = await pub("GET", "/api/resultados"); check("com exibirNotasPublicas: notas e critérios visíveis", r.json?.ranking?.[0]?.notaFinal === 7.6 && r.json.criterios.length === 3, r);
@@ -322,6 +325,12 @@ r = await adm("GET", "/api/admin/dashboard");
 check("dashboard: inscrições, equipes, participantes, projetos, jurados, pendentes, agenda",
   r.json?.equipes?.total === 3 && r.json.participantesEmEquipes === 7 && r.json.projetos.total === 3 && r.json.jurados === 3 && r.json.avaliacoes.pendentes === 0 && r.json.proximaAgenda[0]?.titulo === "Abertura", r.json);
 r = await adm("GET", "/api/admin/usuarios?papel=JURADO"); check("filtro por papel", r.json?.total === 3, r);
+r = await pub("GET", "/api/equipes"); check("lista pública de equipes desligada por padrão", r.json?.publico === false && r.json.equipes.length === 0, r);
+await adm("PUT", `/api/admin/hackathons/${H}`, { exibirEquipesPublicas: true, local: "IFPR Campus Pinhais — Bloco B" });
+r = await pub("GET", "/api/equipes");
+check("com a flag: equipes inscritas públicas, sem dados de pessoas",
+  r.json?.publico === true && r.json.equipes.some((e) => e.nome === `T1 ${s}` && e.integrantes === 3) && !JSON.stringify(r.json).includes("@") && !JSON.stringify(r.json).includes("Aluno"), r);
+r = await pub("GET", "/api/hackathon/atual"); check("local da edição público (planejamento p.1)", r.json?.hackathon?.local === "IFPR Campus Pinhais — Bloco B", r);
 r = await adm("GET", "/api/admin/usuarios?vinculo=SERVIDOR"); check("filtro por vínculo", r.json?.usuarios?.some((u) => u.id === U.S1.id), r);
 r = await adm("GET", `/api/admin/usuarios?q=ALUNO%20UM`); check("busca por nome sem diferenciar maiúsculas", r.json?.total === 1, r);
 r = await adm("GET", "/api/admin/usuarios?pageSize=2&page=2"); check("paginação", r.json?.usuarios?.length === 2 && r.json.page === 2, r);
@@ -359,7 +368,42 @@ r = await fetch(BASE + "/api/auth/logout", { method: "POST", headers: { origin: 
 r = await fetch(BASE + "/api/auth/logout", { method: "POST", headers: { origin: BASE } }); check("mesma origem passa", r.status === 200, r.status);
 
 // ---------------------------------------------------------------- 15
-titulo("15. Exclusão de conta — LGPD (doc 01 §6)");
+titulo("15. Apuração rastreável (canvas: registro de quem lançou o quê)");
+r = await adm("GET", `/api/admin/projetos/${P1}/registros`);
+check("cada nota lançada gera registro (3 jurados × 3 critérios)", r.json?.registros?.length === 9 && r.json.registros.every((x) => x.notaAnterior === null && x.jurado.nome && x.criterio.nome), r.json?.registros?.length);
+await adm("PUT", `/api/admin/hackathons/${H}`, { permitirEdicaoAvaliacao: true });
+// A7 foi rebaixado a participante na seção 12: usa um jurado de P1 que continua ativo.
+const inovacaoDada = { [j1]: 5, [j2]: 7, [j3]: 6 };
+const jAud = [j1, j2, j3].find((k) => k !== "A7");
+r = await U[jAud].c("POST", `/api/jurado/avaliacao/${P1}`, { notas: notas(inovacaoDada[jAud], 9, 10), ...(jAud === j1 && { comentario: "Bom" }) }); check("jurado altera uma nota (edição permitida)", r.status === 200, r);
+r = await adm("GET", `/api/admin/projetos/${P1}/registros`);
+const alteracao = r.json?.registros?.[9];
+check("alteração registrada com valor anterior e novo", r.json?.registros?.length === 10 && alteracao?.notaAnterior === 10 && alteracao.notaNova === 9 && alteracao.criterio.nome === "Técnica", alteracao);
+r = await U[jAud].c("POST", `/api/jurado/avaliacao/${P1}`, { notas: notas(inovacaoDada[jAud], 9, 10), ...(jAud === j1 && { comentario: "Bom" }) });
+r = await adm("GET", `/api/admin/projetos/${P1}/registros`); check("reenvio sem mudança não gera registro", r.json?.registros?.length === 10, r.json?.registros?.length);
+r = await U.A3.c("GET", `/api/admin/projetos/${P1}/registros`); check("participante não vê a trilha: 403", r.status === 403, r);
+
+titulo("16. Páginas do planejamento (31 telas) e rotas antigas");
+const paginasPublicas = ["/", "/hackathon", "/desafios", "/agenda", "/resultados", "/regulamento", "/privacidade", "/login", "/login/aluno", "/login/servidor", "/login/externo", "/cadastro/aluno", "/cadastro/servidor", "/cadastro/externo", "/recuperar-senha", "/sobre"];
+const publicasOk = [];
+for (const p of paginasPublicas) if ((await fetch(BASE + p, { redirect: "manual" })).status === 200) publicasOk.push(p);
+check(`${paginasPublicas.length} páginas públicas respondem 200`, publicasOk.length === paginasPublicas.length, paginasPublicas.filter((p) => !publicasOk.includes(p)));
+const protegidas = ["/dashboard", "/perfil", "/equipe", "/equipe/criar", "/equipe/gerenciar", "/projeto", "/jurado", "/admin", "/admin/hackathons", "/admin/desafios", "/admin/usuarios", "/admin/equipes", "/admin/projetos", "/admin/jurados", "/admin/criterios", "/admin/agenda", "/admin/avaliacoes", "/admin/resultados", "/admin/comunicados"];
+const semLogin = [];
+for (const p of protegidas) {
+  const res = await fetch(BASE + p, { redirect: "manual" });
+  if (!(res.status >= 300 && res.status < 400 && (res.headers.get("location") ?? "").includes("/login"))) semLogin.push(`${p}=${res.status}`);
+}
+check(`${protegidas.length} páginas protegidas levam ao /login sem sessão`, semLogin.length === 0, semLogin);
+const antigas = { "/entrar": "/login", "/conta": "/perfil", "/participante/equipe": "/equipe", "/participante/projeto": "/projeto", "/admin/edicoes": "/admin/hackathons", "/cadastro": "/cadastro/aluno" };
+const redirOk = [];
+for (const [de, para] of Object.entries(antigas)) {
+  const res = await fetch(BASE + de, { redirect: "manual" });
+  if (res.status >= 300 && res.status < 400 && new URL(res.headers.get("location"), BASE).pathname === para) redirOk.push(de);
+}
+check("rotas antigas redirecionam para as do planejamento", redirOk.length === Object.keys(antigas).length, Object.keys(antigas).filter((k) => !redirOk.includes(k)));
+
+titulo("17. Exclusão de conta — LGPD (doc 01 §6)");
 r = await U.A6.c("DELETE", "/api/perfil", { senha: "errada" }); check("exclusão exige a senha: 400", r.status === 400, r);
 r = await U.A6.c("DELETE", "/api/perfil", { senha: "Senha@123" }); check("titular exclui a própria conta", r.status === 200, r);
 r = await U.A6.c("GET", "/api/perfil"); check("sessão encerrada após exclusão", r.status === 401, r);

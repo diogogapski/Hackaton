@@ -85,9 +85,10 @@ model User {
   participacoes    TeamMember[]
 
   // Bloco B (somente relações; jurado é User com papel JURADO)
-  atribuicoes AvaliacaoAtribuicao[]
-  avaliacoes  Avaliacao[]
-  comunicados Comunicado[]
+  atribuicoes        AvaliacaoAtribuicao[]
+  avaliacoes         Avaliacao[]
+  registrosAvaliacao RegistroAvaliacao[]
+  comunicados        Comunicado[]
 }
 
 model PasswordReset {
@@ -163,6 +164,7 @@ model Hackathon {
   inscricaoFim            DateTime?
   prazoSubmissao          DateTime? // se nulo, usa dataFim
   status                  StatusHackathon @default(RASCUNHO)
+  local                   String?
   limiteMinIntegrantes    Int             @default(3)
   limiteMaxIntegrantes    Int             @default(5)
   juradosPorProjeto       Int             @default(3)
@@ -175,6 +177,8 @@ model Hackathon {
   resultadosPublicados    Boolean         @default(false)
   resultadosPublicadosEm  DateTime?
   exibirNotasPublicas     Boolean         @default(false)
+  // O que aparece publicamente é decisão da comissão: nomes das equipes ficam ocultos por padrão.
+  exibirEquipesPublicas   Boolean         @default(false)
   criadoEm                DateTime        @default(now())
   atualizadoEm            DateTime        @updatedAt
 
@@ -214,6 +218,7 @@ model AgendaItem {
   horarioFim    DateTime?
   local         String?
   observacoes   String?
+  cancelado     Boolean   @default(false) // continua visível, riscado, para avisar quem já tinha visto
   criadoEm      DateTime  @default(now())
   atualizadoEm  DateTime  @updatedAt
 
@@ -238,11 +243,12 @@ model Projeto {
   criadoEm     DateTime        @default(now())
   atualizadoEm DateTime        @updatedAt
 
-  team        Team                  @relation(fields: [teamId], references: [id], onDelete: Restrict)
-  hackathon   Hackathon             @relation(fields: [hackathonId], references: [id], onDelete: Restrict)
-  desafio     Desafio?              @relation(fields: [desafioId], references: [id], onDelete: SetNull)
-  atribuicoes AvaliacaoAtribuicao[]
-  avaliacoes  Avaliacao[]
+  team               Team                  @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  hackathon          Hackathon             @relation(fields: [hackathonId], references: [id], onDelete: Restrict)
+  desafio            Desafio?              @relation(fields: [desafioId], references: [id], onDelete: SetNull)
+  atribuicoes        AvaliacaoAtribuicao[]
+  avaliacoes         Avaliacao[]
+  registrosAvaliacao RegistroAvaliacao[]
 
   @@index([hackathonId, situacao])
 }
@@ -259,8 +265,9 @@ model Criterio {
   criadoEm            DateTime @default(now())
   atualizadoEm        DateTime @updatedAt
 
-  hackathon  Hackathon   @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  hackathon  Hackathon           @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
   avaliacoes Avaliacao[]
+  registros  RegistroAvaliacao[]
 
   @@index([hackathonId])
 }
@@ -295,6 +302,25 @@ model Avaliacao {
 
   @@unique([projetoId, juradoId, criterioId])
   @@index([juradoId])
+}
+
+// Trilha de auditoria da apuração: cada nota lançada ou alterada gera um registro imutável
+// (quem, quando, valor anterior e novo). Responde a contestações do resultado.
+model RegistroAvaliacao {
+  id           String   @id @default(uuid())
+  projetoId    String
+  juradoId     String
+  criterioId   String
+  notaAnterior Float?
+  notaNova     Float
+  comentario   String?
+  registradoEm DateTime @default(now())
+
+  projeto  Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  jurado   User     @relation(fields: [juradoId], references: [id], onDelete: Restrict)
+  criterio Criterio @relation(fields: [criterioId], references: [id], onDelete: Cascade)
+
+  @@index([projetoId, registradoEm])
 }
 
 model Comunicado {

@@ -48,7 +48,7 @@ export default function RedefinirSenhaPage() {
       <Suspense fallback={<Loading />}>
         <Formulario />
       </Suspense>
-      <AuthLinks links={[{ href: "/entrar", label: "Ir para o login" }]} />
+      <AuthLinks links={[{ href: "/login", label: "Ir para o login" }]} />
     </AuthLayout>
   );
 }

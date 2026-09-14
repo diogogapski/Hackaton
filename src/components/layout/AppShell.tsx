@@ -22,7 +22,7 @@ export function AppShell({ user, nav, area, children, toolbar }: {
 
   async function sair() {
     await api("/api/auth/logout", { method: "POST" });
-    router.push("/entrar");
+    router.push("/login");
     router.refresh();
   }
 

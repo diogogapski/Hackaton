@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Header } from "@/src/components/layout/Header";
+import { BarraSistema } from "@/src/components/publico/BarraSistema";
 
 /** Página de acesso: chamada à esquerda, formulário à direita. */
 export function AuthLayout({ tag, title, highlight, description, children }: {
@@ -13,6 +14,7 @@ export function AuthLayout({ tag, title, highlight, description, children }: {
   return (
     <>
       <Header />
+      <BarraSistema />
       <main className="mx-auto grid min-h-[calc(100vh-92px)] max-w-[1440px] items-center gap-12 px-6 py-12 md:px-10 lg:grid-cols-2">
         <div>
           <p className="font-mono text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-accent">{`// ${tag}`}</p>

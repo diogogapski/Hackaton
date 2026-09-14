@@ -2,34 +2,24 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { SemEquipe } from "@/src/components/participante/SemEquipe";
-import { useApi } from "@/src/hooks/useApi";
+import { tomSituacaoEquipe, useEquipe } from "@/src/components/participante/useEquipe";
 import { api } from "@/src/lib/api-client";
-import { Alert, Badge, Button, formatarData, Loading, PageHeader, Panel, Table } from "@/src/components/ui/app";
+import { Alert, Badge, Button, Loading, PageHeader, Panel, Table } from "@/src/components/ui/app";
 
-type Membro = { id: string; entrouEm: string; user: { id: string; nome: string; email: string; vinculo: string; curso: string | null } };
-type Equipe = { id: string; nome: string; situacao: string; liderId: string | null; codigoConvite: string | null; membros: Membro[] };
-type Hackathon = { nome: string; limiteMinIntegrantes: number; limiteMaxIntegrantes: number; inscricoesAbertas: boolean };
-
-const tomSituacao = { INSCRITA: "ok", EM_FORMACAO: "alerta", DESCLASSIFICADA: "erro" } as const;
-
-export default function ParticipanteEquipePage() {
-  const eu = useApi<{ user: { id: string } }>("/api/auth/me");
-  const hackathon = useApi<{ hackathon: Hackathon }>("/api/hackathon/atual");
-  const { data, loading, error, reload } = useApi<{ equipe: Equipe | null }>("/api/equipe");
+/**
+ * Gerenciar equipe (planejamento, página 16): convidar por código, remover integrante,
+ * transferir liderança e sair. Ações de líder aparecem só para o líder.
+ */
+export default function GerenciarEquipePage() {
+  const { equipe, h, meuId, souLider, carregado, carregando, erro, recarregar } = useEquipe();
   const [aviso, setAviso] = useState<{ tone: "ok" | "erro"; title: string } | null>(null);
-
-  const equipe = data?.equipe ?? null;
-  const h = hackathon.data?.hackathon;
-  const meuId = eu.data?.user.id;
-  const souLider = Boolean(equipe && meuId && equipe.liderId === meuId);
 
   async function acao(fn: () => Promise<unknown>, sucesso: string, confirmar?: string) {
     if (confirmar && !confirm(confirmar)) return;
     try {
       await fn();
       setAviso({ tone: "ok", title: sucesso });
-      reload();
+      recarregar();
     } catch (e) {
       setAviso({ tone: "erro", title: (e as Error).message });
     }
@@ -38,34 +28,28 @@ export default function ParticipanteEquipePage() {
   return (
     <>
       <PageHeader
-        tag="participante/equipe"
-        title={equipe ? equipe.nome : "Equipe"}
+        tag="equipe/gerenciar"
+        title={equipe ? `Gerenciar ${equipe.nome}` : "Gerenciar equipe"}
         description={h ? `${h.nome} · equipes de ${h.limiteMinIntegrantes} a ${h.limiteMaxIntegrantes} integrantes` : undefined}
-        actions={equipe ? (
-          <>
-            <Badge tone={tomSituacao[equipe.situacao as keyof typeof tomSituacao] ?? "neutro"}>{equipe.situacao}</Badge>
-            <Link href="/participante/projeto" className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Projeto ↗</Link>
-          </>
-        ) : null}
+        actions={equipe ? <Badge tone={tomSituacaoEquipe[equipe.situacao as keyof typeof tomSituacaoEquipe] ?? "neutro"}>{equipe.situacao}</Badge> : null}
       />
 
       {aviso ? <div className="mb-6"><Alert tone={aviso.tone} title={aviso.title} /></div> : null}
-      {loading && !data ? <Loading /> : null}
-      {error ? <Alert title={error.message} /> : null}
+      {carregando ? <Loading /> : null}
+      {erro ? <Alert title={erro.message} /> : null}
 
-      {data && !equipe ? (
-        <SemEquipe aoEntrar={reload} limites={h ? { min: h.limiteMinIntegrantes, max: h.limiteMaxIntegrantes } : undefined} />
+      {carregado && !equipe ? (
+        <Panel>
+          <p className="mb-4 text-[0.9rem] text-muted">Você não participa de nenhuma equipe nesta edição.</p>
+          <Link href="/equipe" className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Criar ou entrar em uma equipe ↗</Link>
+        </Panel>
       ) : null}
 
       {equipe ? (
         <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
           <Panel title={`Integrantes (${equipe.membros.length}/${h?.limiteMaxIntegrantes ?? "?"})`}>
-            {h && equipe.membros.length < h.limiteMinIntegrantes ? (
-              <div className="mb-4">
-                <Alert title={`Faltam ${h.limiteMinIntegrantes - equipe.membros.length} integrante(s) para a equipe ficar INSCRITA`} />
-              </div>
-            ) : null}
-            <Table head={["Nome", "Vínculo", "Entrou em", ""]}>
+            {!souLider ? <p className="mb-4 text-[0.85rem] text-muted">Somente o líder remove integrantes e transfere a liderança.</p> : null}
+            <Table head={["Nome", "Contato", ""]}>
               {equipe.membros.map((m) => {
                 const lider = m.user.id === equipe.liderId;
                 return (
@@ -73,10 +57,8 @@ export default function ParticipanteEquipePage() {
                     <td>
                       <strong>{m.user.nome}</strong> {lider ? <Badge tone="ok">líder</Badge> : null}
                       {m.user.id === meuId ? <span className="ml-2 font-mono text-[0.7rem] text-muted">(você)</span> : null}
-                      <div className="text-[0.78rem] text-muted">{m.user.email}</div>
                     </td>
-                    <td className="text-[0.85rem]">{m.user.vinculo}{m.user.curso ? ` · ${m.user.curso}` : ""}</td>
-                    <td className="whitespace-nowrap text-[0.85rem]">{formatarData(m.entrouEm)}</td>
+                    <td className="text-[0.82rem] text-muted">{m.user.email}</td>
                     <td className="text-right">
                       {souLider && !lider ? (
                         <div className="flex justify-end gap-2">

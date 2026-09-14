@@ -40,7 +40,7 @@ export default function AdminDashboardPage() {
       />
 
       {loading && !data ? <Loading /> : null}
-      {error ? <Alert title={error.message} lines={["Crie uma edição em Edições para começar."]} /> : null}
+      {error ? <Alert title={error.message} lines={["Crie uma edição em Hackathons para começar."]} /> : null}
 
       {data ? (
         <div className="grid gap-6">
@@ -70,7 +70,7 @@ export default function AdminDashboardPage() {
             <Panel title="Fluxo de avaliação">
               <ol className="grid gap-2 text-[0.9rem] text-foreground/80">
                 {[
-                  ["Configure escala, limites e jurados por projeto", "/admin/edicoes"],
+                  ["Configure escala, limites e jurados por projeto", "/admin/hackathons"],
                   ["Cadastre critérios e pesos", "/admin/criterios"],
                   ["Autorize jurados e distribua projetos", "/admin/jurados"],
                   ["Acompanhe as avaliações", "/admin/avaliacoes"],

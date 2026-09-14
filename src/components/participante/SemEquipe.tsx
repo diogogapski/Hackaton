@@ -1,20 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { api, detalhesDoErro } from "@/src/lib/api-client";
 import { Alert, Button, Field, Input, Panel } from "@/src/components/ui/app";
 
-/** Formulários para quem ainda não tem equipe: criar (vira líder) ou entrar por código. */
+/** Para quem ainda não tem equipe: criar (vira líder) ou entrar com o código de convite. */
 export function SemEquipe({ aoEntrar, limites }: { aoEntrar: () => void; limites?: { min: number; max: number } }) {
-  const [nome, setNome] = useState("");
   const [codigo, setCodigo] = useState("");
   const [erro, setErro] = useState<unknown>(null);
 
-  async function acao(e: React.FormEvent, fn: () => Promise<unknown>) {
+  async function entrar(e: React.FormEvent) {
     e.preventDefault();
     try {
       setErro(null);
-      await fn();
+      await api("/api/equipe/entrar", { method: "POST", body: { codigo } });
       aoEntrar();
     } catch (err) {
       setErro(err);
@@ -25,13 +25,12 @@ export function SemEquipe({ aoEntrar, limites }: { aoEntrar: () => void; limites
     <Panel title="Você ainda não tem equipe">
       {limites ? <p className="mb-5 text-[0.88rem] text-muted">Equipes têm de {limites.min} a {limites.max} integrantes.</p> : null}
       <div className="grid gap-6 md:grid-cols-2">
-        <form className="grid content-start gap-3" onSubmit={(e) => acao(e, () => api("/api/equipe", { method: "POST", body: { nome } }))}>
-          <Field label="Criar equipe" hint="Você será o líder">
-            <Input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da equipe" />
-          </Field>
-          <Button type="submit">Criar equipe</Button>
-        </form>
-        <form className="grid content-start gap-3" onSubmit={(e) => acao(e, () => api("/api/equipe/entrar", { method: "POST", body: { codigo } }))}>
+        <div className="grid content-start gap-3">
+          <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-foreground/60">Criar equipe</p>
+          <p className="text-[0.88rem] text-muted">Você será o líder e receberá um código para convidar os colegas.</p>
+          <Link href="/equipe/criar" className="inline-flex h-10 items-center justify-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Criar equipe ↗</Link>
+        </div>
+        <form className="grid content-start gap-3" onSubmit={entrar}>
           <Field label="Entrar com código" hint="Peça o código ao líder">
             <Input required value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ex.: HACKIF01" />
           </Field>

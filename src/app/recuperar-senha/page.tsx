@@ -37,7 +37,7 @@ export default function RecuperarSenhaPage() {
           <Button type="submit" className="h-12">Gerar link</Button>
         </form>
       )}
-      <AuthLinks links={[{ href: "/entrar", label: "Voltar ao login" }]} />
+      <AuthLinks links={[{ href: "/login", label: "Voltar ao login" }]} />
     </AuthLayout>
   );
 }

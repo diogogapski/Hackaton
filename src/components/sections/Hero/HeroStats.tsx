@@ -2,24 +2,15 @@
 
 import { Clock3, Trophy, Users } from "lucide-react";
 import { motion } from "framer-motion";
-import type { DadosHome } from "@/src/server/home/dados";
 
-const doisDigitos = (n: number) => String(n).padStart(2, "0");
+const stats = [
+  { icon: Users, value: "15–25", description: "EQUIPES ESPERADAS" },
+  { icon: Users, value: "03–05", description: "INTEGRANTES POR EQUIPE" },
+  { icon: Clock3, value: "24–48H", description: "DE MUITA INOVAÇÃO" },
+  { icon: Trophy, value: "PRÊMIOS", description: "PARA AS MELHORES SOLUÇÕES" },
+] as const;
 
-export function HeroStats({ dados }: { dados: DadosHome }) {
-  const stats = [
-    dados?.equipesInscritas
-      ? { icon: Users, value: doisDigitos(dados.equipesInscritas), description: "EQUIPES INSCRITAS" }
-      : { icon: Users, value: "15–25", description: "EQUIPES ESPERADAS" },
-    {
-      icon: Users,
-      value: dados ? `${doisDigitos(dados.limiteMinIntegrantes)}–${doisDigitos(dados.limiteMaxIntegrantes)}` : "03–05",
-      description: "INTEGRANTES POR EQUIPE",
-    },
-    { icon: Clock3, value: dados ? `${dados.duracaoHoras}H` : "24–48H", description: "DE MUITA INOVAÇÃO" },
-    { icon: Trophy, value: "PRÊMIOS", description: "PARA AS MELHORES SOLUÇÕES" },
-  ];
-
+export function HeroStats() {
   return (
     <motion.div
       className="relative grid border border-foreground/12 bg-background/92 sm:grid-cols-2 lg:grid-cols-4"

@@ -20,6 +20,48 @@ type Projeto = {
 
 const tom = { RASCUNHO: "neutro", ENVIADO: "ok", DESCLASSIFICADO: "erro" } as const;
 
+type Registro = {
+  id: string;
+  notaAnterior: number | null;
+  notaNova: number;
+  comentario: string | null;
+  registradoEm: string;
+  jurado: { nome: string };
+  criterio: { nome: string };
+};
+
+/** Trilha de auditoria (canvas: "apuração rastreável, com registro de quem lançou o quê"). */
+function HistoricoNotas({ projetoId }: { projetoId: string }) {
+  const { data, error, loading } = useApi<{ projeto: { nome: string }; registros: Registro[] }>(`/api/admin/projetos/${projetoId}/registros`);
+
+  return (
+    <Panel title={data ? `Histórico de notas · ${data.projeto.nome}` : "Histórico de notas"} className="mt-6">
+      {loading && !data ? <Loading /> : null}
+      {error ? <Alert title={error.message} /> : null}
+      {data?.registros.length === 0 ? <Empty>Nenhuma nota lançada</Empty> : null}
+      {data && data.registros.length > 0 ? (
+        <Table head={["Quando", "Jurado", "Critério", "Nota", "Comentário"]}>
+          {data.registros.map((r) => (
+            <tr key={r.id}>
+              <td className="whitespace-nowrap font-mono text-[0.8rem]">{formatarData(r.registradoEm)}</td>
+              <td>{r.jurado.nome}</td>
+              <td>{r.criterio.nome}</td>
+              <td className="whitespace-nowrap font-mono">
+                {r.notaAnterior == null ? (
+                  <span>{r.notaNova} <Badge>lançada</Badge></span>
+                ) : (
+                  <span>{r.notaAnterior} → {r.notaNova} <Badge tone="alerta">alterada</Badge></span>
+                )}
+              </td>
+              <td className="text-[0.85rem] text-foreground/75">{r.comentario ?? "—"}</td>
+            </tr>
+          ))}
+        </Table>
+      ) : null}
+    </Panel>
+  );
+}
+
 export default function AdminProjetosPage() {
   const { url } = useHackathon();
   const [situacao, setSituacao] = useState("");
@@ -27,6 +69,7 @@ export default function AdminProjetosPage() {
     url(`/api/admin/projetos${situacao ? `?situacao=${situacao}` : ""}`),
   );
   const [erro, setErro] = useState<string | null>(null);
+  const [historico, setHistorico] = useState<string | null>(null);
 
   async function alterar(p: Projeto, nova: "DESCLASSIFICADO" | "ATIVO") {
     if (nova === "DESCLASSIFICADO" && !confirm(`Desclassificar "${p.nome}"? Ele sai do ranking.`)) return;
@@ -82,17 +125,24 @@ export default function AdminProjetosPage() {
                 </td>
                 <td><Badge tone={tom[p.situacao]}>{p.situacao}</Badge></td>
                 <td className="text-right">
-                  {p.situacao === "DESCLASSIFICADO" ? (
-                    <Button variant="ghost" className="h-8 px-3" onClick={() => alterar(p, "ATIVO")}>Reativar</Button>
-                  ) : (
-                    <Button variant="danger" className="h-8 px-3" onClick={() => alterar(p, "DESCLASSIFICADO")}>Desclassificar</Button>
-                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" className="h-8 px-3" onClick={() => setHistorico(historico === p.id ? null : p.id)}>
+                      {historico === p.id ? "Fechar histórico" : "Histórico de notas"}
+                    </Button>
+                    {p.situacao === "DESCLASSIFICADO" ? (
+                      <Button variant="ghost" className="h-8 px-3" onClick={() => alterar(p, "ATIVO")}>Reativar</Button>
+                    ) : (
+                      <Button variant="danger" className="h-8 px-3" onClick={() => alterar(p, "DESCLASSIFICADO")}>Desclassificar</Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
           </Table>
         ) : null}
       </Panel>
+
+      {historico ? <HistoricoNotas projetoId={historico} /> : null}
     </>
   );
 }

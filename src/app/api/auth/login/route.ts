@@ -34,7 +34,11 @@ export const POST = route(async (request) => {
   const user = where ? await prisma.user.findFirst({ where }) : null;
   const senhaOk = await verifyPassword(senha, user?.senhaHash ?? (await dummyHash));
 
-  if (!user || !senhaOk || (vinculo && !identificador.includes("@") && user.vinculo !== vinculo)) {
+  // Egresso e externo usam o mesmo acesso por CPF (planejamento: /login/externo).
+  const grupo = (v: string) => (v === "EGRESSO" ? "EXTERNO" : v);
+  const vinculoConfere = !vinculo || identificador.includes("@") || (user && grupo(user.vinculo) === grupo(vinculo));
+
+  if (!user || !senhaOk || !vinculoConfere) {
     await registrarTentativa("login", ip);
     throw unauthorized("Credenciais inválidas");
   }

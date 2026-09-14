@@ -41,7 +41,7 @@ function EquipePanel({ equipe, hackathon }: { equipe: Equipe | null; hackathon: 
     return (
       <Panel title="Sem equipe">
         <p className="mb-4 text-[0.88rem] text-muted">O projeto pertence à equipe. Crie uma equipe ou entre com um código de convite.</p>
-        <Link href="/participante/equipe" className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Montar equipe ↗</Link>
+        <Link href="/equipe" className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Montar equipe ↗</Link>
       </Panel>
     );
   }
@@ -56,7 +56,7 @@ function EquipePanel({ equipe, hackathon }: { equipe: Equipe | null; hackathon: 
       <p className="mt-3 text-[0.8rem] text-muted">
         {equipe.membros.length} integrante(s) · limite {hackathon?.limiteMinIntegrantes}–{hackathon?.limiteMaxIntegrantes}
       </p>
-      <Link href="/participante/equipe" className="mt-4 inline-block font-mono text-[0.72rem] uppercase text-accent hover:underline">Gerenciar equipe →</Link>
+      <Link href="/equipe/gerenciar" className="mt-4 inline-block font-mono text-[0.72rem] uppercase text-accent hover:underline">Gerenciar equipe →</Link>
     </Panel>
   );
 }

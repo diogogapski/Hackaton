@@ -77,15 +77,30 @@ export const POST = route<Ctx>(async (request, { params }) => {
   if (erros.length) throw badRequest("Avaliação inválida", erros);
 
   const agora = new Date();
+  const anteriores = new Map(
+    (await prisma.avaliacao.findMany({ where: { projetoId, juradoId: jurado.id } })).map((a) => [a.criterioId, a]),
+  );
+
   await prisma.$transaction([
-    ...criterios.map((c) => {
+    ...criterios.flatMap((c) => {
       const n = enviados.get(c.id)!;
-      const dados = { nota: n.nota, comentario: n.comentario ?? body.comentario ?? null, avaliadoEm: agora };
-      return prisma.avaliacao.upsert({
-        where: { projetoId_juradoId_criterioId: { projetoId, juradoId: jurado.id, criterioId: c.id } },
-        create: { projetoId, juradoId: jurado.id, criterioId: c.id, ...dados },
-        update: dados,
-      });
+      const comentario = n.comentario ?? body.comentario ?? null;
+      const dados = { nota: n.nota, comentario, avaliadoEm: agora };
+      const anterior = anteriores.get(c.id);
+      const mudou = !anterior || anterior.nota !== n.nota || anterior.comentario !== comentario;
+      return [
+        prisma.avaliacao.upsert({
+          where: { projetoId_juradoId_criterioId: { projetoId, juradoId: jurado.id, criterioId: c.id } },
+          create: { projetoId, juradoId: jurado.id, criterioId: c.id, ...dados },
+          update: dados,
+        }),
+        // Trilha de auditoria: registra lançamento inicial e cada alteração de nota/comentário.
+        ...(mudou
+          ? [prisma.registroAvaliacao.create({
+              data: { projetoId, juradoId: jurado.id, criterioId: c.id, notaAnterior: anterior?.nota ?? null, notaNova: n.nota, comentario, registradoEm: agora },
+            })]
+          : []),
+      ];
     }),
     prisma.avaliacaoAtribuicao.update({
       where: { id: atribuicao.id },
