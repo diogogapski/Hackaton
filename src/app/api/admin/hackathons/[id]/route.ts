@@ -2,6 +2,7 @@ import { prisma } from "@/src/lib/db";
 import { badRequest, conflict, notFound, parseBody, route } from "@/src/lib/http";
 import { requireRole } from "@/src/lib/auth";
 import { hackathonUpdateSchema, validarHackathon } from "@/src/server/hackathon/schemas";
+import { promoverListaEspera } from "@/src/server/equipes/service";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -34,6 +35,13 @@ export const PUT = route<Ctx>(async (request, { params }) => {
     throw conflict("A escala de notas não pode mudar depois que há avaliações registradas");
   }
 
-  const hackathon = await prisma.hackathon.update({ where: { id }, data });
+  const hackathon = await prisma.$transaction(async (tx) => {
+    const atualizado = await tx.hackathon.update({ where: { id }, data });
+    // Limite de equipes aumentou ou foi removido: equipes da lista de espera assumem as vagas.
+    if (data.limiteEquipes !== undefined && data.limiteEquipes !== atual.limiteEquipes) {
+      await promoverListaEspera(tx, id);
+    }
+    return atualizado;
+  });
   return Response.json({ hackathon });
 });

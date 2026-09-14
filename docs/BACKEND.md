@@ -106,6 +106,14 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 `GET /api/admin/avaliacoes`, `GET /api/admin/resultados`, `POST /api/admin/resultados/publicar`,
 `GET /api/admin/dashboard`.
 
+**Admin (operação):** `POST /api/admin/jurados/convidar` (cria JURADO e devolve link para definir senha),
+`POST /api/admin/avaliacoes/corrigir` (correção de nota com justificativa, antes da publicação),
+`GET /api/admin/projetos/:id/registros` (histórico: lançamento, alteração do jurado, correção da comissão),
+`GET|POST /api/admin/presencas`, `GET /api/admin/relatorio`, `GET /api/admin/relatorio/{participantes|equipes|resultado}` (CSV),
+`GET|POST /api/admin/lgpd/descarte` (prévia / anonimização com `{ confirmar: true }`).
+Telas sem link no menu: `/admin/operacao`, `/admin/presenca`, `/admin/relatorio`.
+Estado detalhado e pendências: `docs/ESTADO_ATUAL.md`.
+
 ## Telas
 
 Front funcional sobre a API, com a mesma identidade visual da Home. Áreas logadas são protegidas no
@@ -156,6 +164,9 @@ Roteiro ponta a ponta com o seed:
 | Critérios e pesos | `Criterio.peso` |
 | Escala de notas (a mesma para todos os critérios) | `Hackathon.notaMin` / `notaMax` (travada após a 1ª avaliação) |
 | Ordem de desempate | `Criterio.prioridadeDesempate` (menor primeiro), depois ordem de envio |
+| Limite de equipes inscritas (excedentes vão para `LISTA_ESPERA`) | `Hackathon.limiteEquipes` (nulo = sem limite) |
+| Comunicado automático ao mudar a agenda | `Hackathon.comunicarMudancasAgenda` |
+| Retenção de dados pessoais após o fim | `Hackathon.retencaoDadosDias` (nulo = sem descarte) |
 
 Situação da equipe é recalculada automaticamente: `EM_FORMACAO` abaixo do mínimo, `INSCRITA` a partir dele;
 `DESCLASSIFICADA` só muda pelo admin. Membros saem com soft-delete (`TeamMember.saiuEm`); se o líder sai,

@@ -40,6 +40,7 @@ enum SituacaoUsuario {
 enum SituacaoEquipe {
   EM_FORMACAO
   INSCRITA
+  LISTA_ESPERA // completa, mas a edição atingiu Hackathon.limiteEquipes
   DESCLASSIFICADA
 }
 
@@ -88,7 +89,10 @@ model User {
   atribuicoes        AvaliacaoAtribuicao[]
   avaliacoes         Avaliacao[]
   registrosAvaliacao RegistroAvaliacao[]
+  correcoesFeitas    RegistroAvaliacao[]   @relation("CorrecaoAvaliacao")
   comunicados        Comunicado[]
+  presencas          Presenca[]
+  presencasMarcadas  Presenca[]            @relation("PresencaMarcadaPor")
 }
 
 model PasswordReset {
@@ -111,6 +115,8 @@ model Team {
   liderId       String?
   situacao      SituacaoEquipe @default(EM_FORMACAO)
   codigoConvite String?        @unique
+  // Quando a equipe atingiu o mínimo de integrantes: define a ordem da lista de espera.
+  completaEm    DateTime?
   criadoEm      DateTime       @default(now())
   atualizadoEm  DateTime       @updatedAt
 
@@ -179,6 +185,12 @@ model Hackathon {
   exibirNotasPublicas     Boolean         @default(false)
   // O que aparece publicamente é decisão da comissão: nomes das equipes ficam ocultos por padrão.
   exibirEquipesPublicas   Boolean         @default(false)
+  // Máximo de equipes INSCRITAS; as demais completas vão para LISTA_ESPERA. Nulo = sem limite.
+  limiteEquipes           Int?
+  // Mudanças na agenda publicam comunicado automático (canvas: mudança chega a todos).
+  comunicarMudancasAgenda Boolean         @default(true)
+  // LGPD: dias após o fim da edição para anonimizar dados de participantes e jurados. Nulo = não definido.
+  retencaoDadosDias       Int?
   criadoEm                DateTime        @default(now())
   atualizadoEm            DateTime        @updatedAt
 
@@ -188,6 +200,7 @@ model Hackathon {
   projetos    Projeto[]
   criterios   Criterio[]
   comunicados Comunicado[]
+  presencas   Presenca[]
 
   @@index([status])
 }
@@ -307,20 +320,39 @@ model Avaliacao {
 // Trilha de auditoria da apuração: cada nota lançada ou alterada gera um registro imutável
 // (quem, quando, valor anterior e novo). Responde a contestações do resultado.
 model RegistroAvaliacao {
-  id           String   @id @default(uuid())
-  projetoId    String
-  juradoId     String
-  criterioId   String
-  notaAnterior Float?
-  notaNova     Float
-  comentario   String?
-  registradoEm DateTime @default(now())
+  id            String   @id @default(uuid())
+  projetoId     String
+  juradoId      String
+  criterioId    String
+  notaAnterior  Float?
+  notaNova      Float
+  comentario    String?
+  registradoEm  DateTime @default(now())
+  // Preenchidos quando a comissão corrige uma nota do jurado (canvas: "quem pode alterar nota já lançada").
+  alteradoPorId String?
+  justificativa String?
 
-  projeto  Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
-  jurado   User     @relation(fields: [juradoId], references: [id], onDelete: Restrict)
-  criterio Criterio @relation(fields: [criterioId], references: [id], onDelete: Cascade)
+  projeto     Projeto  @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  jurado      User     @relation(fields: [juradoId], references: [id], onDelete: Restrict)
+  criterio    Criterio @relation(fields: [criterioId], references: [id], onDelete: Cascade)
+  alteradoPor User?    @relation("CorrecaoAvaliacao", fields: [alteradoPorId], references: [id], onDelete: Restrict)
 
   @@index([projetoId, registradoEm])
+}
+
+// Presença no evento (coordenação precisa de "inscritos x presentes" para prestação de contas).
+model Presenca {
+  id              String   @id @default(uuid())
+  hackathonId     String
+  userId          String
+  registradoPorId String?
+  registradoEm    DateTime @default(now())
+
+  hackathon     Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  registradoPor User?     @relation("PresencaMarcadaPor", fields: [registradoPorId], references: [id], onDelete: SetNull)
+
+  @@unique([hackathonId, userId])
 }
 
 model Comunicado {
@@ -330,6 +362,8 @@ model Comunicado {
   titulo       String
   conteudo     String
   publicadoEm  DateTime? // nulo = rascunho
+  // "AGENDA" quando gerado automaticamente por mudança na programação; nulo = escrito pela comissão.
+  origem       String?
   criadoEm     DateTime  @default(now())
   atualizadoEm DateTime  @updatedAt
 

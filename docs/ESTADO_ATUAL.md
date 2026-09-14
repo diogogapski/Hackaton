@@ -1,15 +1,15 @@
 # Estado atual do projeto HACKIF
 
-Retrato do que está pronto e do que falta, conferido contra `00_PLANO_GERAL_BACKEND.md`,
-`01_BACKEND_DEV1_IDENTIDADE_EQUIPES.md`, `02_BACKEND_DEV2_HACKATHON_AVALIACAO.md`, o
-*Planejamento inicial de páginas* (31 telas) e o *Canvas do problema / Mapa de stakeholders*.
+Retrato do que está pronto e do que falta, para quem for continuar. Conferido contra
+`00_PLANO_GERAL_BACKEND.md`, `01_BACKEND_DEV1_IDENTIDADE_EQUIPES.md`, `02_BACKEND_DEV2_HACKATHON_AVALIACAO.md`,
+o *Planejamento inicial de páginas* (31 telas) e o *Canvas do problema / Mapa de stakeholders*.
 
 ## Como rodar
 
 ```bash
 npm install
 cp .env.example .env          # troque AUTH_SECRET
-npm run db:migrate            # aplica as migrations (inclui as mais recentes)
+npm run db:migrate            # aplica as migrations (obrigatório se já existia um prisma/dev.db)
 npm run db:seed               # dados de exemplo
 npm run dev                   # http://localhost:3000
 ```
@@ -17,12 +17,29 @@ npm run dev                   # http://localhost:3000
 Contas do seed (senha `Senha@123`): `admin@hackif.dev` (use `/login/servidor`), `jurado@hackif.dev`
 (SIAPE `7654321`), `aluno@hackif.dev` (matrícula `20260001`, líder da "Equipe Exemplo", convite `HACKIF01`).
 
-Quem já tinha um `prisma/dev.db` antigo precisa rodar `npm run db:migrate` antes do `npm run dev`.
+Testes:
+
+```bash
+npm test                      # unitários (ranking, CSRF, texto de mudança de agenda, CSV) — 25 testes
+npm run build && npm start    # em outro terminal, com banco vazio + admin criado:
+ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 verificações)
+```
+
+## Regras para quem continuar
+
+- **Front existente não deve ser alterado.** Home, `/sobre`, Header, Footer e seções estão idênticos ao
+  commit `e70fa69`; as demais telas existentes também foram mantidas. Pode-se **criar arquivos novos** no
+  mesmo estilo visual.
+- Dev 2 consome só `requireAuth`, `requireRole`, `getCurrentUser`, `getCurrentUserTeam`. Jurado é `User`
+  com papel `JURADO` (não existe outra tabela).
+- Toda regra de negócio configurável fica no banco (`Hackathon`, `Criterio`), nunca no código.
+- Mudou `prisma/schema.prisma`? Gere a migration SQLite e rode `npm run db:pg:sync -- nome` para a do
+  PostgreSQL; o `prebuild` falha se as duas estiverem dessincronizadas.
+  Em terminal não interativo, `migrate dev` não roda: use
+  `npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema.prisma --script -o arquivo.sql`
+  e copie para uma nova pasta em `prisma/migrations/`.
 
 ## O que está pronto
-
-### Front original (Dev Front)
-- Home (`/`), `/sobre`, Header, Footer e seções: **inalterados em relação ao commit `e70fa69`**.
 
 ### Back-end — Dev 1 (identidade e equipes)
 - Cadastro por vínculo (aluno, servidor, egresso/externo) com aceite dos termos; CPF opcional.
@@ -31,74 +48,76 @@ Quem já tinha um `prisma/dev.db` antigo precisa rodar `npm run db:migrate` ante
 - Perfil com documentos bloqueados, troca de senha que derruba outras sessões e exclusão de conta (LGPD).
 - Equipes: criar, entrar por código, convite, remover, sair, transferir liderança; 3–5 integrantes
   configuráveis; nunca sem líder.
+- **Lista de espera**: com `Hackathon.limiteEquipes` definido, equipes completas além do limite ficam
+  `LISTA_ESPERA` (ordem por `Team.completaEm`) e são promovidas sozinhas quando abre vaga (equipe
+  desclassificada, desfeita, abaixo do mínimo ou limite aumentado). Equipe em espera não envia projeto.
 - Admin de usuários (filtros, papel, bloqueio) e de equipes (correções, desclassificação).
-- Helpers compartilhados: `requireAuth`, `requireRole`, `getCurrentUser`, `getCurrentUserTeam`.
 
 ### Back-end — Dev 2 (edição, projetos e avaliação)
-- Edições com datas, local, período de inscrição, status, limites, escala de notas, regulamento e o que
-  aparece publicamente (notas e lista de equipes, desligados por padrão).
-- Desafios (publicar/despublicar), agenda (com cancelamento visível), comunicados.
+- Edições com datas, local, período de inscrição, status, limites, escala de notas, regulamento e
+  visibilidade pública (notas e lista de equipes, desligados por padrão).
+- Desafios, agenda (com cancelamento) e comunicados.
+- **Comunicado automático de mudança de agenda**: alterar horário, local, nome, cancelar ou remover uma
+  atividade publica um comunicado (`origem: "AGENDA"`) com antes e depois, se
+  `comunicarMudancasAgenda` estiver ligado e a edição não for rascunho.
 - Submissão de projeto com prazo, desafio publicado, tecnologias, links e arquivos (Json).
-- Jurados (papel JURADO), atribuição manual e distribuição automática por `juradosPorProjeto`.
-- Avaliação por critério com validação da escala, reenvio configurável e **trilha de auditoria**
-  (`RegistroAvaliacao`: quem lançou/alterou, quando, valor anterior e novo).
-- Ranking por média ponderada com desempate por critério prioritário e ordem de envio; publicação manual.
-- Dashboard administrativo.
+- Jurados, atribuição manual e distribuição automática por `juradosPorProjeto`.
+- **Convite de jurado externo**: `POST /api/admin/jurados/convidar` cria a conta JURADO e devolve um link
+  para definir senha (válido 7 dias) — a comissão envia pelo canal que preferir.
+- Avaliação por critério, reenvio configurável e trilha de auditoria (`RegistroAvaliacao`).
+- **Correção de nota pela comissão**: `POST /api/admin/avaliacoes/corrigir`, antes da publicação, com
+  justificativa obrigatória; aparece no histórico do projeto como `CORRECAO_COMISSAO`.
+- Ranking por média ponderada com desempate configurável; publicação manual; dashboard.
 
-### Telas do sistema (planejamento de páginas)
-Todas as 31 rotas existem, no estilo visual do projeto: `/hackathon`, `/desafios`, `/agenda`, `/resultados`,
-`/login` (+ `/login/aluno|servidor|externo`), `/cadastro/aluno|servidor|externo`, `/recuperar-senha`,
-`/dashboard`, `/perfil`, `/equipe`, `/equipe/criar`, `/equipe/gerenciar`, `/projeto`, `/jurado`,
-`/jurado/avaliacao/:id` e as 12 telas `/admin/*`. Extras: `/privacidade`, `/regulamento`, `/redefinir-senha`.
-Rotas antigas (`/entrar`, `/conta`, `/participante/*`, `/admin/edicoes`) redirecionam.
+### Operação (Canvas do problema)
+- **Presença**: `GET|POST /api/admin/presencas` — marca/desmarca presença de membros das equipes.
+- **Relatório consolidado**: `GET /api/admin/relatorio` (inscritos, presentes, taxa, vínculo, curso,
+  equipes, projetos, avaliação, comunicação, pódio) e CSV em `GET /api/admin/relatorio/{participantes|equipes|resultado}`
+  (`;`, BOM, proteção contra injeção de fórmula).
+- **Descarte LGPD**: `Hackathon.retencaoDadosDias`; `GET /api/admin/lgpd/descarte` mostra a prévia e
+  `POST` com `{ confirmar: true }` anonimiza contas cujas edições já passaram do prazo (nunca admins).
 
-Nas páginas novas há uma barra de navegação do sistema abaixo do Header original (Entrar, Criar conta,
-Desafios, Agenda…). A Home não recebe essa barra.
+### Telas
+- As 31 rotas do planejamento existem (`/hackathon`, `/desafios`, `/agenda`, `/resultados`, logins,
+  cadastros, `/dashboard`, `/perfil`, `/equipe*`, `/projeto`, `/jurado*`, 12 telas `/admin/*`), além de
+  `/privacidade`, `/regulamento`, `/redefinir-senha`. Rotas antigas redirecionam.
+- Telas novas de operação, **ainda sem link no menu admin** (acessar pela URL):
+  `/admin/operacao` (limite de equipes, comunicação da agenda, retenção, convite de jurado, correção de
+  nota, descarte LGPD), `/admin/presenca` e `/admin/relatorio`.
 
-### Infraestrutura e qualidade
-- Prisma 7: SQLite em desenvolvimento, PostgreSQL em produção (schema e migrations gerados por
-  `npm run db:pg:sync`; o build falha se estiverem desatualizados).
-- Railway: `railway.json` com migrations no pre-deploy e healthcheck `/api/health`; `npm run admin:create`
-  cria o primeiro administrador.
-- Segurança: checagem de origem contra CSRF, sessões invalidadas após troca/redefinição de senha,
-  respostas sem hash ou senha.
-- Testes: `npm test` (ranking e CSRF, 13 testes) e `npm run test:fluxo` (API ponta a ponta, ~180 verificações).
-- CI (GitHub Actions): job SQLite e job PostgreSQL 16 real, ambos com build e `test:fluxo`.
+### Infraestrutura
+- Prisma 7: SQLite em dev, PostgreSQL em produção (`prisma.config.ts` escolhe pela `DATABASE_URL`).
+- Railway: `railway.json` (migrations no pre-deploy, healthcheck `/api/health`); `npm run admin:create`.
+- CI (GitHub Actions): job SQLite e job PostgreSQL 16, ambos com build e `test:fluxo`.
 
 ### Última verificação
 | Verificação | Resultado |
 |---|---|
-| Lint, tipos, testes unitários, build | ok |
-| `test:fluxo` em SQLite | 181/181 |
-| `test:fluxo` em PostgreSQL real (build de produção) | 174/174 (sem as etapas que leem o log do servidor) |
-| Navegador: as 31 páginas do planejamento, com cada papel | 40/40 passos, sem erros no console |
+| Lint, testes unitários (25) | ok |
+| `test:fluxo` em SQLite | 223/223 |
+| `test:fluxo` em PostgreSQL embutido (Windows) | 213/216 — as 3 falhas eram o caractere "→" no texto do comunicado, que o banco de teste em WIN1252 não aceitava; trocado por "->". Reexecutar no CI (Postgres UTF8) |
+| Navegador: telas de operação | 9/9 |
+| Navegador: 31 páginas do planejamento | 40/40 |
 | Front do commit `e70fa69` | idêntico |
 
 ## O que falta
 
-### Depende de decisão da comissão (perguntas em aberto nos documentos)
-- Prazo de retenção/expurgo de dados pessoais (hoje só existe exclusão a pedido do titular).
+### Próximos passos técnicos
+1. Confirmar o job PostgreSQL do CI verde após este commit.
+2. Adicionar links para `/admin/operacao`, `/admin/presenca` e `/admin/relatorio` no menu admin
+   (`src/components/layout/navegacao.ts` / `AdminShell`) — não foi feito para não alterar o front existente;
+   combinar com o Dev Front.
+3. Na Railway: PostgreSQL + variáveis `DATABASE_URL` (também no build), `AUTH_SECRET`, `APP_URL`
+   (usada no link do convite de jurado); depois `npm run admin:create`.
+
+### Depende de decisão da comissão
 - Validação externa de matrícula e SIAPE.
-- Se a coordenação do curso terá acesso próprio (hoje só existem PARTICIPANTE, JURADO e ADMIN).
-- Lista de espera acima de 25 equipes; mais de uma rodada de avaliação (triagem e final).
+- Acesso próprio para a coordenação do curso (hoje: PARTICIPANTE, JURADO, ADMIN).
+- Mais de uma rodada de avaliação (triagem e final).
 - Canal de notificação além do painel (e-mail não é enviado).
-- Registro de presença (a coordenação pede número de presentes).
-- Dados extras de participante (restrição alimentar, camiseta) e limite de tamanho de arquivos
-  (hoje arquivos são links).
-- Quem na comissão pode alterar nota já lançada (hoje só o próprio jurado, quando permitido; tudo fica registrado).
+- Dados extras de participante (restrição alimentar, camiseta) e upload real de arquivos (hoje são links).
+- Valor padrão de `retencaoDadosDias` e `limiteEquipes` (hoje nulos = sem descarte / sem limite).
 
-### Front
-- Home: integrar dados reais da edição (datas, local, cronograma resumido, desafios, vencedores) e acesso ao
-  login, como pede o planejamento — decisão do Dev Front, pois a Home foi mantida como está.
-- Âncoras da Home sem seção: `#faq`, `#agenda` (e `#sobre` no rodapé).
-- Imagens e vídeos 3D da Home.
-
-### Documentação
-- `docs/BACKEND.md` ainda descreve as rotas de tela antigas (`/entrar`, `/conta`, `/participante/*`,
-  `/admin/edicoes`) e não menciona agenda cancelada, equipes públicas nem a trilha de auditoria. Os `.md`
-  existentes não foram alterados nesta etapa, por pedido.
-
-### Publicação
-- Commits locais ainda não enviados: `git push origin main`.
-- Na Railway: serviço PostgreSQL + variáveis `DATABASE_URL` (também no build) e `AUTH_SECRET`; depois,
-  `npm run admin:create` com a URL pública do banco.
+### Front (Dev Front)
+- Home: integrar dados reais da edição (datas, local, cronograma, desafios, vencedores).
+- Âncoras da Home sem seção (`#faq`, `#agenda`, `#sobre` no rodapé); imagens e vídeos 3D.

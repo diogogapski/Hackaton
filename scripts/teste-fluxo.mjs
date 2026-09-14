@@ -53,6 +53,7 @@ function cliente(nome) {
     return { status: res.status, json };
   };
   req.nome = nome;
+  req.cookie = () => cookie; // para requisições cruas (ex.: download de CSV)
   return req;
 }
 
@@ -103,13 +104,25 @@ r = await adm("POST", "/api/admin/agenda", { titulo: "Invertido", horarioInicio:
 r = await adm("GET", "/api/admin/agenda");
 const encerramento = r.json.agenda.find((a) => a.titulo === "Encerramento");
 r = await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { cancelado: true }); check("admin cancela atividade (planejamento p.28)", r.json?.item?.cancelado === true, r);
+check("cancelamento publica comunicado automático", /cancelada/.test(r.json?.comunicado?.titulo ?? "") && r.json.comunicado.publicadoEm, r.json?.comunicado);
 r = await pub("GET", "/api/agenda"); check("atividade cancelada continua visível e marcada", r.json?.agenda?.some((a) => a.titulo === "Encerramento" && a.cancelado), r);
-await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { cancelado: false });
+r = await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { cancelado: false }); check("reativação publica comunicado automático", /confirmada novamente/.test(r.json?.comunicado?.titulo ?? ""), r.json);
+const noMinuto = new Date(Math.floor(new Date(encerramento.horarioInicio).getTime() / 60000) * 60000).toISOString();
+r = await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { horarioInicio: noMinuto }); check("salvar sem mudança real (horário sem segundos) não gera comunicado", r.status === 200 && r.json.comunicado === null, r.json);
+await adm("PUT", `/api/admin/hackathons/${H}`, { comunicarMudancasAgenda: false });
+r = await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { local: "Lab 1" }); check("com a opção desligada, mudança não gera comunicado", r.json?.comunicado === null, r.json);
+await adm("PUT", `/api/admin/hackathons/${H}`, { comunicarMudancasAgenda: true });
+r = await adm("PUT", `/api/admin/agenda/${encerramento.id}`, { horarioInicio: new Date(new Date(noMinuto).getTime() + 3600_000).toISOString(), local: "Auditório" });
+check("mudança de horário e local publica comunicado com antes e depois", /início: .* -> .*local: Lab 1 -> Auditório/.test(r.json?.comunicado?.conteudo ?? ""), r.json?.comunicado);
+r = await adm("POST", "/api/admin/agenda", { titulo: "Temporária", horarioInicio: dias(11) });
+r = await adm("DELETE", `/api/admin/agenda/${r.json.item.id}`);
+r = await pub("GET", "/api/comunicados");
+check("remoção de atividade publica comunicado (canvas: mudança chega a todos)", r.json?.comunicados?.some((c) => /Temporária.*saiu da programação/.test(c.titulo)), r.json);
 r = await pub("GET", "/api/agenda"); check("agenda pública ordenada por horário", r.json?.agenda?.map((a) => a.titulo).join() === "Abertura,Encerramento", r);
 await adm("POST", "/api/admin/comunicados", { titulo: "Rascunho", conteudo: "x" });
 r = await adm("POST", "/api/admin/comunicados", { titulo: "Publicado", conteudo: "y", publicar: true });
 check("comunicado publicado com publicadoEm", r.status === 201 && r.json.comunicado.publicadoEm, r);
-r = await pub("GET", "/api/comunicados"); check("público vê só comunicados publicados", r.json?.comunicados?.length === 1, r);
+r = await pub("GET", "/api/comunicados"); check("público vê só comunicados publicados (1 manual + 4 automáticos da agenda)", r.json?.comunicados?.length === 5 && !r.json.comunicados.some((c) => c.titulo === "Rascunho"), r.json?.comunicados?.map((c) => c.titulo));
 const crit = {};
 for (const c of [
   { nome: "Inovação", peso: 3, prioridadeDesempate: 1, ordem: 1 },
@@ -222,9 +235,28 @@ r = await U.A2.c("DELETE", `/api/equipe/membro/${U.A4.id}`); check("líder remov
 r = await U.A2.c("DELETE", `/api/equipe/membro/${U.A2.id}`); check("líder não se remove pela rota de remoção: 400", r.status === 400, r);
 r = await U.A2.c("POST", "/api/equipe/convite"); cod1 = r.json.convite.codigoConvite;
 r = await U.A4.c("POST", "/api/equipe/entrar", { codigo: cod1 }); check("reentrada após saída (histórico preservado) → INSCRITA", r.json?.equipe?.situacao === "INSCRITA", r);
-r = await U.A5.c("POST", "/api/equipe", { nome: `T2 ${s}` }); const cod2 = r.json.equipe.codigoConvite;
+// Lista de espera (canvas: "haverá lista de espera se passar de 25 equipes?") com limite de 2 equipes.
+await adm("PUT", `/api/admin/hackathons/${H}`, { limiteEquipes: 2 });
+r = await U.A5.c("POST", "/api/equipe", { nome: `T2 ${s}` }); const T2 = r.json.equipe.id; const cod2 = r.json.equipe.codigoConvite;
 await U.A6.c("POST", "/api/equipe/entrar", { codigo: cod2 });
-r = await U.S1.c("POST", "/api/equipe/entrar", { codigo: cod2 }); check("T2 com aluno + servidor INSCRITA", r.json?.equipe?.situacao === "INSCRITA", r);
+r = await U.S1.c("POST", "/api/equipe/entrar", { codigo: cod2 }); check("T2 com aluno + servidor INSCRITA (2ª vaga)", r.json?.equipe?.situacao === "INSCRITA", r);
+const X = [];
+for (let i = 1; i <= 3; i++) {
+  const c = cliente(`X${i}`);
+  r = await c("POST", "/api/auth/register/aluno", { nome: `Espera ${i}`, email: `x${i}.${s}@t.dev`, matricula: `X${i}${s}`, curso: "CC", senha: "Senha@123", aceiteTermos: true });
+  X.push({ c, id: r.json.user.id });
+}
+r = await X[0].c("POST", "/api/equipe", { nome: `T4 ${s}` }); const T4 = r.json.equipe.id; const cod4 = r.json.equipe.codigoConvite;
+await X[1].c("POST", "/api/equipe/entrar", { codigo: cod4 });
+r = await X[2].c("POST", "/api/equipe/entrar", { codigo: cod4 }); check("3ª equipe completa entra na LISTA_ESPERA (limite 2)", r.json?.equipe?.situacao === "LISTA_ESPERA", r.json?.equipe?.situacao);
+r = await X[0].c("POST", "/api/projeto", { nome: "P4", descricao: "d", enviar: true }); check("equipe na lista de espera não envia projeto", r.status === 400 && /lista de espera/.test(r.json.error), r);
+await adm("PUT", `/api/admin/equipes/${T2}`, { situacao: "DESCLASSIFICADA" });
+r = await X[0].c("GET", "/api/equipe"); check("vaga liberada: primeira da lista de espera vira INSCRITA", r.json?.equipe?.situacao === "INSCRITA", r.json?.equipe?.situacao);
+r = await adm("PUT", `/api/admin/equipes/${T2}`, { situacao: "EM_FORMACAO" }); check("equipe reativada sem vaga vai para a lista de espera", r.json?.equipe?.situacao === "LISTA_ESPERA", r.json?.equipe?.situacao);
+await adm("PUT", `/api/admin/hackathons/${H}`, { limiteEquipes: null });
+r = await U.A5.c("GET", "/api/equipe"); check("sem limite, a lista de espera é inscrita", r.json?.equipe?.situacao === "INSCRITA", r.json?.equipe?.situacao);
+for (const x of X) await x.c("POST", "/api/equipe/sair");
+r = await adm("GET", "/api/admin/equipes?pageSize=100"); check("equipe esvaziada volta a EM_FORMACAO", r.json?.equipes?.find((e) => e.id === T4)?.situacao === "EM_FORMACAO", null);
 r = await U.E1.c("POST", "/api/equipe", { nome: `T3 ${s}` }); const T3 = r.json.equipe.id; check("T3 externo sozinho (EM_FORMACAO)", r.status === 201, r);
 
 // ---------------------------------------------------------------- 8
@@ -323,7 +355,7 @@ r = await adm("PUT", `/api/admin/projetos/${P2}`, { situacao: "ATIVO" }); check(
 titulo("12. Dashboard e admin de usuários/equipes (doc 01 §5, doc 02 §5)");
 r = await adm("GET", "/api/admin/dashboard");
 check("dashboard: inscrições, equipes, participantes, projetos, jurados, pendentes, agenda",
-  r.json?.equipes?.total === 3 && r.json.participantesEmEquipes === 7 && r.json.projetos.total === 3 && r.json.jurados === 3 && r.json.avaliacoes.pendentes === 0 && r.json.proximaAgenda[0]?.titulo === "Abertura", r.json);
+  r.json?.equipes?.total === 4 && r.json.participantesEmEquipes === 7 && r.json.projetos.total === 3 && r.json.jurados === 3 && r.json.avaliacoes.pendentes === 0 && r.json.proximaAgenda[0]?.titulo === "Abertura", r.json);
 r = await adm("GET", "/api/admin/usuarios?papel=JURADO"); check("filtro por papel", r.json?.total === 3, r);
 r = await pub("GET", "/api/equipes"); check("lista pública de equipes desligada por padrão", r.json?.publico === false && r.json.equipes.length === 0, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { exibirEquipesPublicas: true, local: "IFPR Campus Pinhais — Bloco B" });
@@ -381,6 +413,16 @@ const alteracao = r.json?.registros?.[9];
 check("alteração registrada com valor anterior e novo", r.json?.registros?.length === 10 && alteracao?.notaAnterior === 10 && alteracao.notaNova === 9 && alteracao.criterio.nome === "Técnica", alteracao);
 r = await U[jAud].c("POST", `/api/jurado/avaliacao/${P1}`, { notas: notas(inovacaoDada[jAud], 9, 10), ...(jAud === j1 && { comentario: "Bom" }) });
 r = await adm("GET", `/api/admin/projetos/${P1}/registros`); check("reenvio sem mudança não gera registro", r.json?.registros?.length === 10, r.json?.registros?.length);
+const correcao = { projetoId: P1, juradoId: U[jAud].id, criterioId: crit.Impacto };
+r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, justificativa: "curta" }); check("correção exige justificativa: 400", r.status === 400, r);
+r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 11, justificativa: "Ficha em papel conferida com o jurado" }); check("correção respeita a escala: 400", r.status === 400, r);
+r = await U.A3.c("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, justificativa: "Tentativa de participante" }); check("participante não corrige nota: 403", r.status === 403, r);
+r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, justificativa: "Nota digitada errado, conferida com o jurado" });
+check("comissão corrige nota (canvas: quem altera nota já lançada)", r.status === 200 && r.json.avaliacao.nota === 8 && r.json.registro.notaAnterior === 10, r);
+r = await adm("GET", `/api/admin/projetos/${P1}/registros`);
+const ultimo = r.json?.registros?.at(-1);
+check("correção registrada com quem corrigiu e justificativa", r.json?.registros?.length === 11 && ultimo?.tipo === "CORRECAO_COMISSAO" && ultimo.alteradoPor?.nome && /Correção pela comissão .*conferida com o jurado/.test(ultimo.comentario), ultimo);
+r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, justificativa: "Nota digitada errado, conferida com o jurado" }); check("correção para o mesmo valor: 400", r.status === 400, r);
 r = await U.A3.c("GET", `/api/admin/projetos/${P1}/registros`); check("participante não vê a trilha: 403", r.status === 403, r);
 
 titulo("16. Páginas do planejamento (31 telas) e rotas antigas");
@@ -418,6 +460,53 @@ r = await adm("PUT", `/api/admin/usuarios/${U.A6.id}/papel`, { papel: "JURADO" }
 r = await cliente()("POST", "/api/auth/register/aluno", { nome: "Aluno 6 de volta", email: U.A6.email, matricula: U.A6.matricula, curso: "CC", senha: "Senha@123", aceiteTermos: true });
 check("e-mail e matrícula liberados para novo cadastro", r.status === 201, r);
 r = await adm("DELETE", "/api/perfil", { senha: ADMIN.senha }); check("último administrador não pode excluir a conta: 400", r.status === 400, r);
+
+titulo("18. Operação do evento (canvas): convite de jurado, presença, relatório e descarte LGPD");
+r = await adm("POST", "/api/admin/jurados/convidar", { nome: "Jurada Convidada", email: `conv.${s}@parceiro.dev` });
+check("comissão cadastra jurado externo e recebe link de senha (7 dias)", r.status === 201 && r.json.jurado.papel === "JURADO" && /\/redefinir-senha\?token=/.test(r.json.linkDefinirSenha), r);
+const tokenConvite = new URL(r.json.linkDefinirSenha).searchParams.get("token");
+r = await adm("POST", "/api/admin/jurados/convidar", { nome: "Dup", email: `conv.${s}@parceiro.dev` }); check("convite duplicado: 409", r.status === 409, r);
+r = await adm("POST", "/api/admin/jurados/convidar", { nome: "Participante", email: U.A3.email }); check("e-mail de conta existente: 409 (autorizar em vez de convidar)", r.status === 409, r);
+r = await pub("POST", "/api/auth/redefinir-senha", { token: tokenConvite, novaSenha: "Jurada@2026" }); check("jurado define a senha pelo link", r.status === 200, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `conv.${s}@parceiro.dev`, senha: "Jurada@2026" }); check("jurado convidado entra com papel JURADO", r.status === 200 && r.json.user.papel === "JURADO", r);
+
+r = await adm("GET", "/api/admin/presencas"); const inscritosAgora = r.json?.participantes?.filter((p) => p.equipe.situacao === "INSCRITA") ?? [];
+check("lista de presença traz participantes com equipe", r.status === 200 && r.json.participantes.some((p) => p.id === U.A2.id && !p.presente), r.json?.total);
+r = await adm("POST", "/api/admin/presencas", { userId: U.A2.id, presente: true }); check("marca presença", r.json?.presente === true, r);
+r = await adm("POST", "/api/admin/presencas", { userId: U.A2.id, presente: true }); check("marcar de novo não duplica", r.status === 200, r);
+r = await adm("POST", "/api/admin/presencas", { userId: U.A1.id, presente: true }); check("sem equipe na edição não recebe presença: 400", r.status === 400, r);
+r = await U.A3.c("GET", "/api/admin/presencas"); check("participante não vê presença: 403", r.status === 403, r);
+r = await adm("GET", "/api/admin/relatorio");
+const esperadosPresentes = inscritosAgora.some((p) => p.id === U.A2.id) ? 1 : 0;
+check("relatório: inscritos, presentes e taxa (canvas: prestação de contas)",
+  r.json?.participantes?.inscritos === inscritosAgora.length && r.json.participantes.presentes === esperadosPresentes && r.json.comunicacao.mudancasDeAgendaComunicadas === 4 && r.json.avaliacao.atribuicoes === 5, r.json);
+let csvRes = await fetch(BASE + "/api/admin/relatorio/participantes", { headers: { cookie: adm.cookie() } });
+// text() descarta o BOM ao decodificar: confere os bytes crus.
+const bytes = new Uint8Array(await csvRes.arrayBuffer());
+let csv = new TextDecoder("utf-8", { ignoreBOM: true }).decode(bytes);
+check("CSV de participantes para Excel (BOM, ; e dados da equipe)",
+  csvRes.status === 200 && /text\/csv/.test(csvRes.headers.get("content-type")) && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf &&
+  csv.startsWith("﻿nome;email;vinculo") && csv.includes(U.A2.email) && csv.includes(";sim"), csv.slice(0, 200));
+csvRes = await fetch(BASE + "/api/admin/relatorio/resultado", { headers: { cookie: adm.cookie() } });
+csv = await csvRes.text();
+check("CSV de resultado com posição, nota final e médias por critério", csvRes.status === 200 && csv.split("\r\n").length === 3 && /posicao;projeto;equipe;nota_final;jurados;media_Inovação/.test(csv), csv.slice(0, 200));
+csvRes = await fetch(BASE + "/api/admin/relatorio/participantes");
+check("CSV sem sessão de admin: 401", csvRes.status === 401, csvRes.status);
+r = await adm("GET", "/api/admin/relatorio/csv-inexistente"); check("tipo de relatório inexistente: 404", r.status === 404, r);
+
+r = await adm("GET", "/api/admin/lgpd/descarte"); check("descarte bloqueado sem prazo definido", r.json?.liberado === false && /retencaoDadosDias/.test(r.json.motivo), r.json);
+await adm("PUT", `/api/admin/hackathons/${H}`, { retencaoDadosDias: 30 });
+r = await adm("GET", "/api/admin/lgpd/descarte"); check("descarte bloqueado antes do prazo vencer", r.json?.liberado === false && /não venceu/.test(r.json.motivo), r.json);
+await adm("PUT", `/api/admin/hackathons/${H}`, { retencaoDadosDias: 0, dataInicio: dias(-3), dataFim: dias(-2) });
+r = await adm("GET", "/api/admin/lgpd/descarte");
+const elegiveis = r.json?.contas ?? [];
+check("prévia lista participantes e jurados da edição, nunca administradores", r.json?.liberado === true && elegiveis.some((c) => c.id === U.A2.id) && elegiveis.some((c) => c.papel === "JURADO") && !elegiveis.some((c) => c.papel === "ADMIN"), r.json);
+check("quem não participou da edição não entra no descarte", !elegiveis.some((c) => c.nome === "Jurada Convidada" || c.nome === "Aluno 6 de volta"), elegiveis.map((c) => c.nome));
+r = await adm("POST", "/api/admin/lgpd/descarte", {}); check("descarte exige confirmação explícita: 400", r.status === 400, r);
+r = await adm("POST", "/api/admin/lgpd/descarte", { confirmar: true }); check("descarte anonimiza as contas elegíveis", r.json?.anonimizadas === elegiveis.length && elegiveis.length > 0, r.json);
+r = await cliente()("POST", "/api/auth/login", { identificador: U.A2.email, senha: "Senha@123" }); check("conta descartada não entra mais", r.status === 401, r);
+r = await adm("GET", "/api/admin/lgpd/descarte"); check("após o descarte não restam contas elegíveis", r.json?.total === 0, r.json?.total);
+r = await adm("GET", "/api/admin/dashboard"); check("administrador segue ativo após o descarte", r.status === 200, r);
 
 console.log(`\n${total - falhas}/${total} verificações passaram${falhas ? ` — ${falhas} FALHA(S)` : ""}`);
 process.exit(falhas ? 1 : 0);

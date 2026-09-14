@@ -21,17 +21,57 @@ async function membroAtivo(tx: Tx, userId: string, hackathonId: string) {
   return tx.teamMember.findFirst({ where: { userId, saiuEm: null, team: { hackathonId } } });
 }
 
-/** Recalcula EM_FORMACAO/INSCRITA pelo mínimo configurado. DESCLASSIFICADA não muda. */
+/**
+ * Preenche as vagas de INSCRITA com equipes em LISTA_ESPERA, na ordem em que completaram o mínimo.
+ * Sem `limiteEquipes`, todas as equipes da fila são inscritas.
+ */
+export async function promoverListaEspera(tx: Tx, hackathonId: string) {
+  const { limiteEquipes } = await tx.hackathon.findUniqueOrThrow({ where: { id: hackathonId }, select: { limiteEquipes: true } });
+  const fila = await tx.team.findMany({
+    where: { hackathonId, situacao: "LISTA_ESPERA" },
+    orderBy: [{ completaEm: "asc" }, { criadoEm: "asc" }],
+    select: { id: true },
+  });
+  if (fila.length === 0) return;
+
+  const vagas = limiteEquipes == null
+    ? fila.length
+    : limiteEquipes - (await tx.team.count({ where: { hackathonId, situacao: "INSCRITA" } }));
+  for (const { id } of fila.slice(0, Math.max(0, vagas))) {
+    await tx.team.update({ where: { id }, data: { situacao: "INSCRITA" } });
+  }
+}
+
+/**
+ * Recalcula a situação pelo mínimo de integrantes e pelo limite de equipes da edição:
+ * abaixo do mínimo → EM_FORMACAO (libera a vaga); completa → INSCRITA ou LISTA_ESPERA.
+ * DESCLASSIFICADA só muda pelo admin.
+ */
 async function atualizarSituacao(tx: Tx, teamId: string) {
   const team = await tx.team.findUniqueOrThrow({
     where: { id: teamId },
-    include: { hackathon: { select: { limiteMinIntegrantes: true } } },
+    include: { hackathon: { select: { limiteMinIntegrantes: true, limiteEquipes: true } } },
   });
   if (team.situacao === "DESCLASSIFICADA") return;
 
   const ativos = await tx.teamMember.count({ where: { teamId, saiuEm: null } });
-  const situacao = ativos >= team.hackathon.limiteMinIntegrantes ? "INSCRITA" : "EM_FORMACAO";
-  if (situacao !== team.situacao) await tx.team.update({ where: { id: teamId }, data: { situacao } });
+  const completa = ativos >= team.hackathon.limiteMinIntegrantes;
+
+  if (!completa) {
+    if (team.situacao !== "EM_FORMACAO" || team.completaEm) {
+      await tx.team.update({ where: { id: teamId }, data: { situacao: "EM_FORMACAO", completaEm: null } });
+    }
+    if (team.situacao === "INSCRITA") await promoverListaEspera(tx, team.hackathonId);
+    return;
+  }
+
+  if (team.situacao === "INSCRITA") return; // já ocupa uma vaga
+  const semLimite = team.hackathon.limiteEquipes == null;
+  await tx.team.update({
+    where: { id: teamId },
+    data: { situacao: semLimite ? "INSCRITA" : "LISTA_ESPERA", completaEm: team.completaEm ?? new Date() },
+  });
+  if (!semLimite) await promoverListaEspera(tx, team.hackathonId);
 }
 
 /** Promove o membro ativo mais antigo quando o líder sai/é removido. */
@@ -174,8 +214,13 @@ export async function atualizarEquipeAdmin(
 
   await prisma.$transaction(async (tx) => {
     await tx.team.update({ where: { id: teamId }, data });
-    // Fora DESCLASSIFICADA, a situação sempre segue o número de membros (EM_FORMACAO/INSCRITA).
-    if (data.situacao !== "DESCLASSIFICADA") await atualizarSituacao(tx, teamId);
+    if (data.situacao === "DESCLASSIFICADA") {
+      // Vaga liberada: a primeira equipe da lista de espera assume.
+      if (team.situacao === "INSCRITA") await promoverListaEspera(tx, team.hackathonId);
+    } else {
+      // Fora DESCLASSIFICADA, a situação segue o número de membros e o limite de equipes.
+      await atualizarSituacao(tx, teamId);
+    }
   });
   return buscarEquipe(teamId);
 }

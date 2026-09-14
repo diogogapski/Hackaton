@@ -21,9 +21,20 @@ export const GET = route<Ctx>(async (_request, { params }) => {
       notaNova: true,
       comentario: true,
       registradoEm: true,
+      justificativa: true,
       jurado: { select: { id: true, nome: true } },
       criterio: { select: { id: true, nome: true } },
+      alteradoPor: { select: { id: true, nome: true } },
     },
   });
-  return Response.json({ projeto, registros });
+
+  return Response.json({
+    projeto,
+    registros: registros.map((r) => ({
+      ...r,
+      tipo: r.alteradoPor ? "CORRECAO_COMISSAO" : r.notaAnterior == null ? "LANCAMENTO" : "ALTERACAO_JURADO",
+      // A tela de histórico mostra `comentario`: na correção, exibe quem corrigiu e por quê.
+      comentario: r.alteradoPor ? `Correção pela comissão (${r.alteradoPor.nome}): ${r.justificativa}` : r.comentario,
+    })),
+  });
 });

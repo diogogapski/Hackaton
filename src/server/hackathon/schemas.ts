@@ -26,6 +26,9 @@ const hackathonCampos = z.object({
   notaMax: z.number().min(0).max(1000).optional(),
   exibirNotasPublicas: z.boolean().optional(),
   exibirEquipesPublicas: z.boolean().optional(),
+  limiteEquipes: z.number().int().min(1).max(1000).nullable().optional(),
+  comunicarMudancasAgenda: z.boolean().optional(),
+  retencaoDadosDias: z.number().int().min(0).max(3650).nullable().optional(),
   regulamentoUrl: z.url().nullable().optional(),
   regulamentoTexto: opcional(50000),
 });

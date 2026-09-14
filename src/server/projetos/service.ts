@@ -20,6 +20,9 @@ export async function validarEscrita(
 ) {
   if (!equipe) throw forbidden("Você precisa participar de uma equipe");
   if (equipe.situacao === "DESCLASSIFICADA") throw forbidden("Equipe desclassificada");
+  if (enviar && equipe.situacao === "LISTA_ESPERA") {
+    throw badRequest("A equipe está na lista de espera: o envio fica liberado quando surgir uma vaga");
+  }
   if (!submissaoAberta(hackathon)) throw badRequest("O prazo de submissão está encerrado");
 
   if (desafioId) {
