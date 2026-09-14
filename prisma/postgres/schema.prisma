@@ -63,22 +63,24 @@ enum SituacaoProjeto {
 // ============================================================
 
 model User {
-  id              String          @id @default(uuid())
-  nome            String
-  email           String          @unique
-  senhaHash       String
-  vinculo         Vinculo
-  matricula       String?         @unique
-  siape           String?         @unique
-  cpf             String?         @unique // sensível (LGPD) — sempre opcional
-  curso           String?
-  telefone        String?
-  papel           Papel           @default(PARTICIPANTE)
-  situacao        SituacaoUsuario @default(ATIVO)
-  termosAceitosEm DateTime?
-  anonimizadoEm   DateTime? // reservado para exclusão/anonimização futura
-  criadoEm        DateTime        @default(now())
-  atualizadoEm    DateTime        @updatedAt
+  id                 String          @id @default(uuid())
+  nome               String
+  email              String          @unique
+  senhaHash          String
+  vinculo            Vinculo
+  matricula          String?         @unique
+  siape              String?         @unique
+  cpf                String?         @unique // sensível (LGPD) — sempre opcional
+  curso              String?
+  telefone           String?
+  papel              Papel           @default(PARTICIPANTE)
+  situacao           SituacaoUsuario @default(ATIVO)
+  termosAceitosEm    DateTime?
+  anonimizadoEm      DateTime? // conta anonimizada a pedido do titular (LGPD)
+  // Sessões emitidas antes deste instante são inválidas (troca/redefinição de senha, anonimização).
+  sessoesValidasApos DateTime?
+  criadoEm           DateTime        @default(now())
+  atualizadoEm       DateTime        @updatedAt
 
   passwordResets   PasswordReset[]
   equipesLideradas Team[]          @relation("LiderEquipe")
@@ -253,7 +255,7 @@ model Criterio {
   nome                String
   descricao           String?
   peso                Float    @default(1)
-  ordem              Int      @default(0)
+  ordem               Int      @default(0)
   // Desempate: critérios com prioridade menor desempatam primeiro; nulo = não desempata.
   prioridadeDesempate Int?
   criadoEm            DateTime @default(now())

@@ -12,6 +12,9 @@ export const PUT = route<Ctx>(async (request, { params }) => {
   const { situacao } = await parseBody(request, alterarSituacaoUsuarioSchema);
   if (id === admin.id && situacao === "BLOQUEADO") throw badRequest("Você não pode bloquear a própria conta");
 
+  const alvo = await prisma.user.findUnique({ where: { id }, select: { anonimizadoEm: true } });
+  if (alvo?.anonimizadoEm && situacao === "ATIVO") throw badRequest("Conta anonimizada não pode ser reativada");
+
   const user = await prisma.user.update({ where: { id }, data: { situacao }, select: publicUserSelect });
   return Response.json({ user });
 });

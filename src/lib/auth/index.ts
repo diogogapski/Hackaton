@@ -12,7 +12,7 @@
  */
 import { prisma } from "@/src/lib/db";
 import { forbidden, unauthorized } from "@/src/lib/http";
-import { readSessionUserId } from "@/src/lib/auth/session";
+import { readSession } from "@/src/lib/auth/session";
 import type { Papel } from "@/src/generated/prisma/enums";
 
 /** Campos do usuário seguros para retornar na API (sem senhaHash). */
@@ -28,17 +28,25 @@ export const publicUserSelect = {
   papel: true,
   situacao: true,
   termosAceitosEm: true,
+  anonimizadoEm: true,
   criadoEm: true,
 } as const;
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 export async function getCurrentUser() {
-  const userId = await readSessionUserId();
-  if (!userId) return null;
+  const sessao = await readSession();
+  if (!sessao) return null;
 
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: publicUserSelect });
-  if (!user || user.situacao !== "ATIVO") return null;
+  const registro = await prisma.user.findUnique({
+    where: { id: sessao.userId },
+    select: { ...publicUserSelect, sessoesValidasApos: true },
+  });
+  if (!registro || registro.situacao !== "ATIVO") return null;
+
+  // Sessão emitida antes de uma troca de senha/anonimização deixa de valer.
+  const { sessoesValidasApos, ...user } = registro;
+  if (sessoesValidasApos && sessao.emitidaEm * 1000 < sessoesValidasApos.getTime()) return null;
   return user;
 }
 

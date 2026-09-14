@@ -19,6 +19,32 @@ export const conflict = (msg: string) => new HttpError(409, msg);
 
 type Handler<C> = (request: Request, context: C) => Promise<Response>;
 
+const METODOS_QUE_ALTERAM = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * Defesa contra CSRF (além do cookie SameSite=Lax): requisições que alteram dados vindas de
+ * navegador precisam ter `Origin` igual ao host da aplicação. Clientes sem `Origin`
+ * (curl, testes, apps) passam — eles não carregam o cookie da vítima.
+ */
+export function origemPermitida(request: Request) {
+  if (!METODOS_QUE_ALTERAM.has(request.method)) return true;
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+
+  let hostOrigem: string;
+  try {
+    hostOrigem = new URL(origin).host;
+  } catch {
+    return false;
+  }
+  const hosts = [
+    request.headers.get("x-forwarded-host"),
+    request.headers.get("host"),
+    process.env.APP_URL ? new URL(process.env.APP_URL).host : null,
+  ];
+  return hosts.some((h) => h?.split(",")[0].trim() === hostOrigem);
+}
+
 /**
  * Envolve um Route Handler convertendo HttpError, ZodError e erros conhecidos
  * do Prisma em respostas JSON padronizadas: `{ error, details? }`.
@@ -26,6 +52,7 @@ type Handler<C> = (request: Request, context: C) => Promise<Response>;
 export function route<C = unknown>(handler: Handler<C>): Handler<C> {
   return async (request, context) => {
     try {
+      if (!origemPermitida(request)) throw new HttpError(403, "Origem da requisição não permitida");
       return await handler(request, context);
     } catch (error) {
       if (error instanceof HttpError) {

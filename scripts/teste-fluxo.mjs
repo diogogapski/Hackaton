@@ -157,7 +157,12 @@ r = await U.E1.c("PUT", "/api/perfil", { cpf: "00000000000" }); check("CPF bloqu
 r = await U.A1.c("PUT", "/api/perfil", { papel: "ADMIN" }); check("papel não editável pelo usuário: 400", r.status === 400, r);
 r = await U.A1.c("PUT", "/api/perfil", { email: U.A2.email }); check("e-mail em uso: 409", r.status === 409, r);
 r = await U.A1.c("PUT", "/api/perfil/senha", { senhaAtual: "errada", novaSenha: "Nova@12345" }); check("troca de senha exige a atual", r.status === 400, r);
+const outroDispositivo = cliente("A1-outro");
+await outroDispositivo("POST", "/api/auth/login", { identificador: U.A1.email, senha: "Senha@123" });
+await new Promise((ok) => setTimeout(ok, 1100)); // o iat do JWT tem resolução de 1s
 r = await U.A1.c("PUT", "/api/perfil/senha", { senhaAtual: "Senha@123", novaSenha: "Nova@12345" }); check("troca de senha", r.status === 200, r);
+r = await U.A1.c("GET", "/api/perfil"); check("quem trocou a senha continua logado", r.status === 200, r);
+r = await outroDispositivo("GET", "/api/perfil"); check("sessões de outros dispositivos são encerradas", r.status === 401, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: U.A1.email, senha: "Nova@12345" }); check("login com a nova senha", r.status === 200, r);
 
 // ---------------------------------------------------------------- 6
@@ -172,6 +177,15 @@ if (link) {
   r = await pub("POST", "/api/auth/redefinir-senha", { token: link[1], novaSenha: "Recuperada@1" }); check("redefine senha com token", r.status === 200, r);
   r = await pub("POST", "/api/auth/redefinir-senha", { token: link[1], novaSenha: "Outra@12345" }); check("token não reutilizável: 400", r.status === 400, r);
   r = await cliente()("POST", "/api/auth/login", { identificador: U.A8.email, senha: "Recuperada@1" }); check("login com senha redefinida", r.status === 200, r);
+  r = await U.A8.c("GET", "/api/perfil"); check("redefinição derruba sessões abertas", r.status === 401, r);
+
+  await U.A8.c("POST", "/api/auth/recuperar-senha", { email: U.A8.email });
+  await new Promise((ok) => setTimeout(ok, 700));
+  const novo = [...readFileSync(LOG, "utf8").matchAll(new RegExp(`${U.A8.email.replace(/\./g, "\\.")}: \\S+token=(\\S+)`, "g"))].pop();
+  const simultaneos = await Promise.all([1, 2].map(() => pub("POST", "/api/auth/redefinir-senha", { token: novo[1], novaSenha: "Recuperada@1" })));
+  check("mesmo token usado ao mesmo tempo: só uma requisição vence", simultaneos.map((x) => x.status).sort().join() === "200,400", simultaneos.map((x) => x.status));
+  await new Promise((ok) => setTimeout(ok, 1100));
+  r = await U.A8.c("POST", "/api/auth/login", { identificador: U.A8.email, senha: "Recuperada@1" }); check("login após nova redefinição", r.status === 200, r);
 }
 
 // ---------------------------------------------------------------- 7
@@ -200,7 +214,7 @@ r = await U.A2.c("DELETE", `/api/equipe/membro/${U.A4.id}`); check("líder remov
 r = await U.A2.c("DELETE", `/api/equipe/membro/${U.A2.id}`); check("líder não se remove pela rota de remoção: 400", r.status === 400, r);
 r = await U.A2.c("POST", "/api/equipe/convite"); cod1 = r.json.convite.codigoConvite;
 r = await U.A4.c("POST", "/api/equipe/entrar", { codigo: cod1 }); check("reentrada após saída (histórico preservado) → INSCRITA", r.json?.equipe?.situacao === "INSCRITA", r);
-r = await U.A5.c("POST", "/api/equipe", { nome: `T2 ${s}` }); const T2 = r.json.equipe.id; const cod2 = r.json.equipe.codigoConvite;
+r = await U.A5.c("POST", "/api/equipe", { nome: `T2 ${s}` }); const cod2 = r.json.equipe.codigoConvite;
 await U.A6.c("POST", "/api/equipe/entrar", { codigo: cod2 });
 r = await U.S1.c("POST", "/api/equipe/entrar", { codigo: cod2 }); check("T2 com aluno + servidor INSCRITA", r.json?.equipe?.situacao === "INSCRITA", r);
 r = await U.E1.c("POST", "/api/equipe", { nome: `T3 ${s}` }); const T3 = r.json.equipe.id; check("T3 externo sozinho (EM_FORMACAO)", r.status === 201, r);
@@ -285,7 +299,12 @@ check("nota final ponderada P2 = 7.6", lin[P2]?.notaFinal === 7.6, lin[P2]);
 check("desempate por Inovação: P2 em 1º, P1 em 2º", lin[P2]?.posicao === 1 && lin[P1]?.posicao === 2, r.json.ranking);
 check("rascunho fora do ranking", !lin[r.json.ranking.find((l) => l.projeto.nome === "P3")?.projetoId], r.json.ranking);
 r = await pub("GET", "/api/resultados"); check("antes da publicação: nada público", r.json?.publicado === false && r.json.ranking.length === 0, r);
+let home = await (await fetch(BASE + "/")).text();
+check("Home mostra status e desafio publicado da edição", home.includes("INSCRIÇÕES ABERTAS") && home.includes("Desafio publicado") && !home.includes("Desafio oculto"), "home sem dados da edição");
+check("FAQ da Home usa os limites configurados", home.includes('id="faq"') && home.includes("de 3 a 4 integrantes") && home.includes("Inovação (peso 3)"), "faq sem dados");
 r = await adm("POST", "/api/admin/resultados/publicar", {}); check("publica manualmente", r.json?.hackathon?.resultadosPublicados === true, r);
+home = await (await fetch(BASE + "/")).text();
+check("Home mostra vencedores após publicação", home.includes("RESULTADOS PUBLICADOS") && home.includes(`T2 ${s}`), "home sem vencedores");
 r = await pub("GET", "/api/resultados"); check("público: ranking com equipes e projetos, sem notas", r.json?.publicado && r.json.ranking[0].projeto.id === P2 && r.json.ranking[0].equipe.nome && r.json.ranking[0].notaFinal === undefined, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { exibirNotasPublicas: true });
 r = await pub("GET", "/api/resultados"); check("com exibirNotasPublicas: notas e critérios visíveis", r.json?.ranking?.[0]?.notaFinal === 7.6 && r.json.criterios.length === 3, r);
@@ -336,6 +355,25 @@ r = await pub("GET", "/api/hackathon/atual"); check("edição encerrada continua
 titulo("14. Sessão");
 r = await U.A2.c("POST", "/api/auth/logout"); r = await U.A2.c("GET", "/api/perfil"); check("logout encerra a sessão", r.status === 401, r);
 r = await fetch(BASE + "/api/perfil", { headers: { cookie: "hackif_session=forjado.invalido.token" } }); check("cookie forjado: 401", r.status === 401, r.status);
+r = await fetch(BASE + "/api/auth/logout", { method: "POST", headers: { origin: "https://site-malicioso.example" } }); check("requisição que altera dados vinda de outro site: 403", r.status === 403, r.status);
+r = await fetch(BASE + "/api/auth/logout", { method: "POST", headers: { origin: BASE } }); check("mesma origem passa", r.status === 200, r.status);
+
+// ---------------------------------------------------------------- 15
+titulo("15. Exclusão de conta — LGPD (doc 01 §6)");
+r = await U.A6.c("DELETE", "/api/perfil", { senha: "errada" }); check("exclusão exige a senha: 400", r.status === 400, r);
+r = await U.A6.c("DELETE", "/api/perfil", { senha: "Senha@123" }); check("titular exclui a própria conta", r.status === 200, r);
+r = await U.A6.c("GET", "/api/perfil"); check("sessão encerrada após exclusão", r.status === 401, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: U.A6.email, senha: "Senha@123" }); check("conta excluída não loga", r.status === 401, r);
+r = await adm("GET", "/api/admin/usuarios?situacao=BLOQUEADO&pageSize=100");
+const anon = r.json?.usuarios?.find((u) => u.id === U.A6.id);
+check("dados pessoais apagados (nome, e-mail, matrícula)", anon && anon.nome === "Conta removida" && !anon.email.includes(s) && anon.matricula === null && anon.anonimizadoEm, anon);
+r = await adm("GET", "/api/admin/equipes?pageSize=100");
+check("saiu da equipe; histórico da equipe preservado", r.json?.equipes?.some((e) => e.nome === `T2 ${s}`) && !r.json.equipes.some((e) => e.membros.some((m) => m.user.id === U.A6.id)), r.json?.equipes?.map((e) => e.nome));
+r = await adm("PUT", `/api/admin/usuarios/${U.A6.id}/situacao`, { situacao: "ATIVO" }); check("conta anonimizada não é reativada: 400", r.status === 400, r);
+r = await adm("PUT", `/api/admin/usuarios/${U.A6.id}/papel`, { papel: "JURADO" }); check("conta anonimizada não recebe papel: 400", r.status === 400, r);
+r = await cliente()("POST", "/api/auth/register/aluno", { nome: "Aluno 6 de volta", email: U.A6.email, matricula: U.A6.matricula, curso: "CC", senha: "Senha@123", aceiteTermos: true });
+check("e-mail e matrícula liberados para novo cadastro", r.status === 201, r);
+r = await adm("DELETE", "/api/perfil", { senha: ADMIN.senha }); check("último administrador não pode excluir a conta: 400", r.status === 400, r);
 
 console.log(`\n${total - falhas}/${total} verificações passaram${falhas ? ` — ${falhas} FALHA(S)` : ""}`);
 process.exit(falhas ? 1 : 0);

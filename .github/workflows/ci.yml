@@ -6,7 +6,8 @@ on:
   pull_request:
 
 jobs:
-  verificar:
+  sqlite:
+    name: SQLite (desenvolvimento)
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: file:./prisma/ci.db
@@ -28,11 +29,57 @@ jobs:
       - name: Testes unitários
         run: npm test
 
-      - name: Migrations (SQLite)
+      - name: Migrations
         run: npx prisma migrate deploy
 
       - name: Build (inclui checagem do schema PostgreSQL)
         run: npm run build
+
+      - name: Teste de fluxo ponta a ponta (banco vazio)
+        env:
+          ADMIN_EMAIL: admin@ci.dev
+          ADMIN_SENHA: Admin@2026!
+        run: |
+          npm run admin:create
+          npm start > servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/api/health && break; sleep 1; done
+          npm run test:fluxo
+
+  postgres:
+    name: PostgreSQL (produção / Railway)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hackif
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hackif
+      AUTH_SECRET: ci-secret-nao-usar-em-producao
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências (gera o client PostgreSQL)
+        run: npm ci
+
+      - name: Build antes das migrations (como na Railway)
+        run: npm run build
+
+      - name: Migrations PostgreSQL
+        run: npx prisma migrate deploy
 
       - name: Teste de fluxo ponta a ponta (banco vazio)
         env:

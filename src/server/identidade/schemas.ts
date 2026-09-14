@@ -70,6 +70,10 @@ export const perfilUpdateSchema = z.strictObject({
   telefone: z.string().trim().max(30).nullable().optional(),
 });
 
+export const excluirContaSchema = z.object({
+  senha: z.string().min(1),
+});
+
 export const trocarSenhaSchema = z.object({
   senhaAtual: z.string().min(1),
   novaSenha: senha,

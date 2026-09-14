@@ -26,10 +26,10 @@ Scripts: `db:migrate`, `db:deploy`, `db:generate`, `db:seed`, `db:reset`, `db:st
 
 | Comando | Cobre |
 |---|---|
-| `npm test` | cálculo de ranking: média ponderada, desempate por critério e por ordem de envio, empates |
-| `npm run test:fluxo` | fluxo inteiro da API sobre banco vazio (~150 verificações): edição, conteúdo, cadastro, login, perfil, recuperação de senha, equipes, submissão, jurados, avaliação, apuração, publicação, admin, prazos e sessão; também falha se alguma resposta expuser hash ou senha |
+| `npm test` | ranking (média ponderada, desempates, empates) e checagem de origem contra CSRF |
+| `npm run test:fluxo` | fluxo inteiro sobre banco vazio (~170 verificações): edição, conteúdo, cadastro, login, perfil, recuperação de senha, equipes, submissão, jurados, avaliação, apuração, publicação, Home, admin, prazos, sessão, CSRF e exclusão de conta; também falha se alguma resposta expuser hash ou senha |
 
-O GitHub Actions (`.github/workflows/ci.yml`) roda lint, testes, build e o `test:fluxo` a cada push.
+O GitHub Actions (`.github/workflows/ci.yml`) roda a cada push dois jobs: SQLite (lint, testes, build e `test:fluxo`) e PostgreSQL 16 real (build antes das migrations, como na Railway, depois migrations e `test:fluxo`).
 Para rodar o fluxo localmente, veja as instruções no topo de `scripts/teste-fluxo.mjs`.
 
 ## Estrutura
@@ -47,6 +47,7 @@ src/server/equipes/         Dev 1 — regras de equipe
 src/server/hackathon/       Dev 2 — edição atual, schemas do bloco B
 src/server/projetos/        Dev 2 — regras de submissão
 src/server/avaliacao/       Dev 2 — ranking (puro + testes), resultados, atribuições
+src/server/home/            dados da edição vigente para a Home
 src/app/api/**/route.ts     handlers finos: autenticar → validar → chamar serviço
 ```
 
@@ -86,7 +87,7 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/recuperar-senha` (sem envio de e-mail; link só no console em dev),
 `POST /api/auth/redefinir-senha`.
 
-**Perfil:** `GET|PUT /api/perfil` (só nome, e-mail, telefone), `PUT /api/perfil/senha`.
+**Perfil:** `GET|PUT /api/perfil` (só nome, e-mail, telefone), `DELETE /api/perfil` (exclusão da conta, exige senha), `PUT /api/perfil/senha`.
 
 **Equipe:** `GET|POST /api/equipe`, `POST /api/equipe/convite`, `POST /api/equipe/entrar`,
 `POST /api/equipe/sair`, `POST /api/equipe/transferir-lideranca`, `DELETE /api/equipe/membro/:userId`.
@@ -118,7 +119,7 @@ layout (`getCurrentUser` + `redirect`); menus por papel em `src/components/layou
 | `/hackathon` | público | edição atual, desafios publicados, agenda, comunicados |
 | `/resultados` | público | pódio e ranking após publicação (notas só se `exibirNotasPublicas`) |
 | `/regulamento` | público | `Hackathon.regulamentoTexto` e link para `regulamentoUrl` |
-| `/conta` | logado | perfil (nome, e-mail, telefone) e troca de senha |
+| `/conta` | logado | perfil (nome, e-mail, telefone), troca de senha e exclusão da conta |
 | `/participante/equipe` | PARTICIPANTE | criar/entrar por código, convite, remover, transferir liderança, sair |
 | `/participante/projeto` | PARTICIPANTE | cadastrar, editar e enviar o projeto da equipe |
 | `/jurado`, `/jurado/avaliacao/:id` | JURADO | projetos atribuídos, notas por critério, prévia ponderada |
@@ -167,6 +168,25 @@ instâncias). Padrão: 20 falhas de login por IP a cada 15 min e 5 pedidos de re
 ajustável por `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`.
 O limite é folgado porque laboratórios do campus costumam sair pelo mesmo IP.
 
+## Segurança e LGPD
+
+- **Sessão:** JWT HS256 em cookie `httpOnly`, `SameSite=Lax`, `Secure` em produção, validade de 7 dias.
+  A cada requisição o usuário é relido do banco: conta bloqueada ou anonimizada perde o acesso na hora.
+- **Sessões antigas:** trocar a senha (`PUT /api/perfil/senha`) ou redefini-la pelo link grava
+  `User.sessoesValidasApos`; sessões emitidas antes disso deixam de valer. Quem trocou a senha continua
+  logado (recebe um cookie novo).
+- **Token de redefinição:** guardado só como hash SHA-256, válido por 1 hora e consumido de forma atômica
+  (duas requisições simultâneas com o mesmo token: só uma vence).
+- **CSRF:** além do `SameSite`, `route()` recusa (403) `POST/PUT/PATCH/DELETE` cujo cabeçalho `Origin`
+  não corresponda ao host da aplicação (`x-forwarded-host`, `host` ou `APP_URL`).
+- **Dados sensíveis:** respostas usam `publicUserSelect` (nunca `senhaHash`); o `test:fluxo` falha se
+  algum hash ou senha aparecer em qualquer resposta.
+- **Exclusão de conta (LGPD):** `DELETE /api/perfil` com `{ senha }` anonimiza a conta — apaga nome,
+  e-mail, matrícula, SIAPE, CPF, curso e telefone, tira a pessoa da equipe, invalida a senha e as sessões
+  e marca `anonimizadoEm`. Equipes, projetos e avaliações continuam existindo, sem identificar o titular;
+  e-mail e documentos ficam livres para novo cadastro. O último administrador não pode se excluir, e conta
+  anonimizada não pode ser reativada nem receber papel.
+
 ## Conformidade com os documentos de planejamento
 
 Conferido contra `00_PLANO_GERAL_BACKEND.md`, `01_BACKEND_DEV1_IDENTIDADE_EQUIPES.md` e
@@ -188,15 +208,16 @@ Diferenças em relação aos documentos, decididas pela equipe durante a impleme
 
 Extras além dos documentos: `GET /api/auth/me`, `GET /api/comunicados`, `PUT /api/admin/usuarios/:id/situacao`,
 `GET|POST /api/admin/jurados/:id/atribuicoes` com remoção, `POST /api/admin/atribuicoes/distribuir`,
-`PUT /api/admin/projetos/:id`, `GET /api/health`, campo `User.telefone` (contato do perfil) e
-`User.anonimizadoEm` (reservado para a futura exclusão/anonimização de conta).
+`PUT /api/admin/projetos/:id`, `GET /api/health`, `DELETE /api/perfil` (exclusão de conta, que o doc 01
+§6 pede para prever), campo `User.telefone` (contato do perfil) e `User.sessoesValidasApos`.
 
-Ainda em aberto:
+A Home usa os dados da edição vigente, como o doc 02 prevê para `/api/hackathon/atual`: status, duração,
+tamanho de equipe, equipes inscritas, desafios publicados, vencedores após a publicação e uma FAQ com as
+regras configuradas (`src/server/home/dados.ts`). A consulta roda por requisição (`connection()`), nunca
+no build, e sem banco a Home volta aos textos padrão.
 
-- dependem da comissão: política de retenção/expurgo de dados pessoais e endpoint de anonimização de
-  conta; validação externa de matrícula/SIAPE;
-- front (Dev Front): a Home ainda é estática — o doc 02 prevê `GET /api/hackathon/atual` também para ela
-  (datas, status, desafios); `/hackathon`, `/resultados` e `/regulamento` já consomem a API.
+Ainda em aberto (dependem da comissão): política de retenção/expurgo de dados pessoais (prazo para
+anonimizar contas inativas automaticamente) e validação externa de matrícula/SIAPE.
 
 ## SQLite (dev) e PostgreSQL (Railway)
 
@@ -234,6 +255,6 @@ Já configurado em `railway.json` (Railpack, `preDeployCommand: npm run db:deplo
    DATABASE_URL="<DATABASE_PUBLIC_URL da Railway>" ADMIN_EMAIL=... ADMIN_SENHA=... ADMIN_NOME="..." npm run admin:create
    ```
 
-Validado localmente contra PostgreSQL (build de produção + `next start` + teste ponta a ponta).
+Validado contra PostgreSQL real (build de produção + `next start` + `test:fluxo` completo). O mesmo roda no CI.
 
 Buscas por texto usam `contem()` de `src/lib/db.ts`, que ignora maiúsculas nos dois bancos.

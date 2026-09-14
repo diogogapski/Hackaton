@@ -1,27 +1,15 @@
 import { Medal, Trophy } from "lucide-react";
+import type { DadosHome } from "@/src/server/home/dados";
 
-type Winner = {
-  position: 1 | 2 | 3;
-  project: string;
-  team: string;
-  challenge: string;
-  year: string;
-  image: string;
-};
+const titulos = { 1: "PRIMEIRO LUGAR", 2: "SEGUNDO LUGAR", 3: "TERCEIRO LUGAR" } as Record<number, string>;
 
-const winners: Winner[] = [
-  { position: 1, project: "", team: "", challenge: "", year: "", image: "" },
-  { position: 2, project: "", team: "", challenge: "", year: "", image: "" },
-  { position: 3, project: "", team: "", challenge: "", year: "", image: "" },
-];
-
-const secondaryPlaces = [
-  { position: "02", title: "SEGUNDO LUGAR" },
-  { position: "03", title: "TERCEIRO LUGAR" },
-] as const;
-
-export function WinnersSection() {
-  const firstPlace = winners.find((winner) => winner.position === 1);
+export function WinnersSection({ dados }: { dados: DadosHome }) {
+  const vencedores = dados?.vencedores ?? null;
+  const primeiro = vencedores?.[0] ?? null;
+  const secundarios = vencedores
+    ? [1, 2].map((i) => vencedores[i] ?? null)
+    : [null, null];
+  const status = vencedores ? "STATUS // RESULTADOS PUBLICADOS" : "STATUS // AGUARDANDO RESULTADOS";
 
   return (
     <section id="resultados" className="bg-background py-24 lg:py-32">
@@ -65,7 +53,7 @@ export function WinnersSection() {
                     WINNERS_ARCHIVE
                   </p>
                   <p className="mt-2 font-display text-[0.72rem] uppercase tracking-[0.08em] text-accent/70">
-                    STATUS // AGUARDANDO RESULTADOS
+                    {status}
                   </p>
                 </div>
                 <Trophy
@@ -78,27 +66,29 @@ export function WinnersSection() {
 
               <div className="mt-16 max-w-[640px]">
                 <p className="font-display text-[clamp(4.5rem,10vw,9rem)] font-semibold leading-none text-accent">
-                  {String(firstPlace?.position ?? 1).padStart(2, "0")}
+                  {String(primeiro?.posicao ?? 1).padStart(2, "0")}
                 </p>
                 <p className="mt-4 font-display text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-foreground/62">
                   PRIMEIRO LUGAR
                 </p>
                 <h3 className="mt-4 font-display text-[clamp(2rem,4vw,4.7rem)] font-semibold uppercase leading-[1] text-foreground">
-                  AINDA ESTÁ VAZIO._
+                  {primeiro ? primeiro.projeto : "AINDA ESTÁ VAZIO._"}
                 </h3>
                 <p className="mt-7 font-display text-[1rem] leading-7 text-foreground/58">
-                  Pode ser da sua equipe.
+                  {primeiro
+                    ? `${primeiro.equipe}${primeiro.desafio ? ` · ${primeiro.desafio}` : ""}`
+                    : "Pode ser da sua equipe."}
                 </p>
               </div>
 
               <div className="my-12 h-px bg-foreground/12" />
 
               <div className="grid gap-8 md:grid-cols-2">
-                {secondaryPlaces.map((place) => (
-                  <div key={place.position} className="border-t border-accent/20 pt-6">
+                {secundarios.map((lugar, i) => (
+                  <div key={i} className="border-t border-accent/20 pt-6">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-display text-[2.6rem] font-semibold leading-none text-foreground/28">
-                        {place.position}
+                        {String(lugar?.posicao ?? i + 2).padStart(2, "0")}
                       </p>
                       <Medal
                         size={28}
@@ -108,10 +98,10 @@ export function WinnersSection() {
                       />
                     </div>
                     <h4 className="mt-7 font-display text-[1rem] font-semibold uppercase text-foreground">
-                      {place.title}
+                      {lugar ? lugar.projeto : titulos[i + 2]}
                     </h4>
                     <p className="mt-3 font-display text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-foreground/45">
-                      STATUS // AGUARDANDO RESULTADOS
+                      {lugar ? `${titulos[lugar.posicao]} // ${lugar.equipe}` : status}
                     </p>
                   </div>
                 ))}
@@ -119,7 +109,7 @@ export function WinnersSection() {
 
               <div className="mt-12 flex justify-end">
                 <a
-                  href="#resultados"
+                  href="/resultados"
                   className="font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground"
                 >
                   VER RESULTADOS ↗

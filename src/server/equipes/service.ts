@@ -120,6 +120,12 @@ async function desligarMembro(tx: Tx, teamId: string, userId: string) {
   await atualizarSituacao(tx, teamId);
 }
 
+/** Desliga o usuário de todas as equipes ativas (usado na anonimização da conta). */
+export async function desligarDeTodasAsEquipes(tx: Tx, userId: string) {
+  const ativas = await tx.teamMember.findMany({ where: { userId, saiuEm: null }, select: { teamId: true } });
+  for (const { teamId } of ativas) await desligarMembro(tx, teamId, userId);
+}
+
 export async function sairDaEquipe(user: CurrentUser, teamId: string) {
   await prisma.$transaction((tx) => desligarMembro(tx, teamId, user.id));
 }

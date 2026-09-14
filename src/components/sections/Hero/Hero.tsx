@@ -1,9 +1,10 @@
+import type { DadosHome } from "@/src/server/home/dados";
 import { HeroContent } from "./HeroContent";
 import { HeroStats } from "./HeroStats";
 import { HeroSystemInfo } from "./HeroSystemInfo";
 import { HeroVisual } from "./HeroVisual";
 
-export function Hero() {
+export function Hero({ dados }: { dados: DadosHome }) {
   return (
     <section
       className="relative overflow-hidden bg-background"
@@ -26,12 +27,12 @@ export function Hero() {
 
       <div className="relative mx-auto max-w-[1440px] px-6 pb-8 pt-8 md:px-10 lg:pb-10 lg:pt-12">
         <div className="grid gap-10 pb-8 lg:min-h-[430px] lg:grid-cols-[minmax(520px,0.48fr)_minmax(320px,0.34fr)_minmax(170px,0.18fr)] lg:gap-0">
-          <HeroContent />
+          <HeroContent dados={dados} />
           <HeroVisual />
-          <HeroSystemInfo />
+          <HeroSystemInfo dados={dados} />
         </div>
 
-        <HeroStats />
+        <HeroStats dados={dados} />
       </div>
     </section>
   );

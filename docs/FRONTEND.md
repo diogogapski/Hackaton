@@ -40,7 +40,7 @@ src/
     api/                                back-end (ver docs/BACKEND.md)
   components/
     layout/      Header, Footer, AppShell, AuthLayout, navegacao.ts
-    sections/    Hero, Concept, home/ e about/ (Home e Sobre)
+    sections/    Hero, Concept, home/ (inclui FaqSection) e about/ (Home e Sobre)
     ui/          app.tsx — componentes das telas logadas
     admin/       ResourceManager (CRUD), seletor de edição
     participante/
@@ -158,5 +158,4 @@ de `useApi` (`src/hooks/useApi.ts`) e `api()` (`src/lib/api-client.ts`).
 
 - Back-end, autenticação, inscrição, equipes, submissão, avaliação e resultados implementados.
 - As imagens e vídeos 3D da Home serão adicionados posteriormente.
-- A Home ainda é estática: o doc 02 prevê `GET /api/hackathon/atual` também para ela (datas, status, desafios).
-- Link da navegação ainda sem destino: a seção `#faq` da Home.
+- A Home é um Server Component que lê a edição vigente (`src/server/home/dados.ts`) e repassa às seções: Hero (status, duração, tamanho de equipe, equipes inscritas), Próximo Desafio, Vencedores, FAQ (`#faq`) e CTA final. Sem edição ou sem banco, cada seção mantém o texto original.

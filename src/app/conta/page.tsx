@@ -34,6 +34,8 @@ export default function ContaPage() {
   const [senhas, setSenhas] = useState({ senhaAtual: "", novaSenha: "", confirmar: "" });
   const [rPerfil, setRPerfil] = useState<Resultado>(null);
   const [rSenha, setRSenha] = useState<Resultado>(null);
+  const [senhaExclusao, setSenhaExclusao] = useState("");
+  const [rExclusao, setRExclusao] = useState<Resultado>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -61,9 +63,22 @@ export default function ContaPage() {
     try {
       await api("/api/perfil/senha", { method: "PUT", body: { senhaAtual: senhas.senhaAtual, novaSenha: senhas.novaSenha } });
       setSenhas({ senhaAtual: "", novaSenha: "", confirmar: "" });
-      setRSenha({ ok: "Senha alterada" });
+      setRSenha({ ok: "Senha alterada. Sessões em outros dispositivos foram encerradas." });
     } catch (err) {
       setRSenha({ erro: err });
+    }
+  }
+
+  async function excluirConta(e: React.FormEvent) {
+    e.preventDefault();
+    setRExclusao(null);
+    if (!confirm("Excluir sua conta? Seus dados pessoais serão apagados e não será possível recuperá-la.")) return;
+    try {
+      await api("/api/perfil", { method: "DELETE", body: { senha: senhaExclusao } });
+      router.push("/?conta=excluida");
+      router.refresh();
+    } catch (err) {
+      setRExclusao({ erro: err });
     }
   }
 
@@ -119,6 +134,20 @@ export default function ContaPage() {
           </form>
         </Panel>
       </div>
+
+      <Panel title="Excluir minha conta" className="mt-6 border-if-red/40">
+        <form onSubmit={excluirConta} className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="md:col-span-2 text-[0.9rem] text-foreground/75">
+            Conforme a LGPD, você pode pedir a exclusão dos seus dados. Nome, e-mail, documentos e contato são apagados;
+            você sai da equipe atual e perde o acesso. Projetos e avaliações já registrados permanecem, sem identificar você.
+          </div>
+          <Field label="Confirme com sua senha">
+            <Input required type="password" autoComplete="current-password" value={senhaExclusao} onChange={(e) => setSenhaExclusao(e.target.value)} />
+          </Field>
+          <Button type="submit" variant="danger" className="h-[42px]">Excluir conta</Button>
+          <div className="md:col-span-2"><Retorno r={rExclusao} /></div>
+        </form>
+      </Panel>
     </>
   );
 }

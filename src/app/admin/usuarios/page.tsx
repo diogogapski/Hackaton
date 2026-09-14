@@ -15,6 +15,7 @@ type Usuario = {
   curso: string | null;
   papel: "PARTICIPANTE" | "JURADO" | "ADMIN";
   situacao: "ATIVO" | "BLOQUEADO";
+  anonimizadoEm: string | null;
   criadoEm: string;
 };
 type Resposta = { usuarios: Usuario[]; total: number; page: number; pageSize: number };
@@ -95,6 +96,7 @@ export default function AdminUsuariosPage() {
                 <td>
                   <Select
                     className="w-40 py-1.5"
+                    disabled={Boolean(u.anonimizadoEm)}
                     value={u.papel}
                     aria-label={`Papel de ${u.nome}`}
                     onChange={(e) => acao(
@@ -107,9 +109,9 @@ export default function AdminUsuariosPage() {
                     <option value="ADMIN">Admin</option>
                   </Select>
                 </td>
-                <td><Badge tone={u.situacao === "ATIVO" ? "ok" : "erro"}>{u.situacao}</Badge></td>
+                <td>{u.anonimizadoEm ? <Badge>anonimizada</Badge> : <Badge tone={u.situacao === "ATIVO" ? "ok" : "erro"}>{u.situacao}</Badge>}</td>
                 <td className="text-right">
-                  <Button
+                  {u.anonimizadoEm ? null : (<Button
                     variant={u.situacao === "ATIVO" ? "danger" : "ghost"}
                     className="h-8 px-3"
                     onClick={() => acao(
@@ -121,7 +123,7 @@ export default function AdminUsuariosPage() {
                     )}
                   >
                     {u.situacao === "ATIVO" ? "Bloquear" : "Desbloquear"}
-                  </Button>
+                  </Button>)}
                 </td>
               </tr>
             ))}

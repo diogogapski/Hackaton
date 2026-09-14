@@ -33,15 +33,19 @@ export async function destroySession() {
   store.delete(SESSION_COOKIE);
 }
 
-/** Retorna o id do usuário do cookie de sessão, ou null se ausente/inválido. */
-export async function readSessionUserId(): Promise<string | null> {
+/** Lê o cookie de sessão: id do usuário e instante de emissão (segundos), ou null se ausente/inválido. */
+export async function readSession(): Promise<{ userId: string; emitidaEm: number } | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
-    return payload.sub ?? null;
+    if (!payload.sub || typeof payload.iat !== "number") return null;
+    return { userId: payload.sub, emitidaEm: payload.iat };
   } catch {
     return null;
   }
 }
+
+/** Marco para invalidar sessões anteriores. Arredonda para o segundo (resolução do `iat` do JWT). */
+export const inicioNovasSessoes = () => new Date(Math.floor(Date.now() / 1000) * 1000);
