@@ -13,6 +13,9 @@ export const navAdmin = [
   { label: "Avaliações", href: "/admin/avaliacoes" },
   { label: "Resultados", href: "/admin/resultados" },
   { label: "Comunicados", href: "/admin/comunicados" },
+  { label: "Presença", href: "/admin/presenca" },
+  { label: "Relatório", href: "/admin/relatorio" },
+  { label: "Operação", href: "/admin/operacao" },
   { label: "Perfil", href: "/perfil" },
 ];
 

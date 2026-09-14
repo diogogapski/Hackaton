@@ -81,7 +81,7 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 - As 31 rotas do planejamento existem (`/hackathon`, `/desafios`, `/agenda`, `/resultados`, logins,
   cadastros, `/dashboard`, `/perfil`, `/equipe*`, `/projeto`, `/jurado*`, 12 telas `/admin/*`), além de
   `/privacidade`, `/regulamento`, `/redefinir-senha`. Rotas antigas redirecionam.
-- Telas novas de operação, **ainda sem link no menu admin** (acessar pela URL):
+- Telas de operação, no menu admin (`src/components/layout/navegacao.ts`):
   `/admin/operacao` (limite de equipes, comunicação da agenda, retenção, convite de jurado, correção de
   nota, descarte LGPD), `/admin/presenca` e `/admin/relatorio`.
 
@@ -95,7 +95,8 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 |---|---|
 | Lint, testes unitários (25) | ok |
 | `test:fluxo` em SQLite | 223/223 |
-| `test:fluxo` em PostgreSQL embutido (Windows) | 213/216 — as 3 falhas eram o caractere "→" no texto do comunicado, que o banco de teste em WIN1252 não aceitava; trocado por "->". Reexecutar no CI (Postgres UTF8) |
+| `test:fluxo` em PostgreSQL embutido (Windows) | 213/216 localmente (o banco de teste em WIN1252 recusava "→"; trocado por "->") |
+| CI GitHub Actions (SQLite + PostgreSQL 16) no commit `54edcdc` | verde |
 | Navegador: telas de operação | 9/9 |
 | Navegador: 31 páginas do planejamento | 40/40 |
 | Front do commit `e70fa69` | idêntico |
@@ -103,11 +104,7 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 ## O que falta
 
 ### Próximos passos técnicos
-1. Confirmar o job PostgreSQL do CI verde após este commit.
-2. Adicionar links para `/admin/operacao`, `/admin/presenca` e `/admin/relatorio` no menu admin
-   (`src/components/layout/navegacao.ts` / `AdminShell`) — não foi feito para não alterar o front existente;
-   combinar com o Dev Front.
-3. Na Railway: PostgreSQL + variáveis `DATABASE_URL` (também no build), `AUTH_SECRET`, `APP_URL`
+1. Na Railway: PostgreSQL + variáveis `DATABASE_URL` (também no build), `AUTH_SECRET`, `APP_URL`
    (usada no link do convite de jurado); depois `npm run admin:create`.
 
 ### Depende de decisão da comissão

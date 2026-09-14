@@ -111,7 +111,7 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 `GET /api/admin/projetos/:id/registros` (histórico: lançamento, alteração do jurado, correção da comissão),
 `GET|POST /api/admin/presencas`, `GET /api/admin/relatorio`, `GET /api/admin/relatorio/{participantes|equipes|resultado}` (CSV),
 `GET|POST /api/admin/lgpd/descarte` (prévia / anonimização com `{ confirmar: true }`).
-Telas sem link no menu: `/admin/operacao`, `/admin/presenca`, `/admin/relatorio`.
+Telas no menu admin: `/admin/operacao`, `/admin/presenca`, `/admin/relatorio`.
 Estado detalhado e pendências: `docs/ESTADO_ATUAL.md`.
 
 ## Telas
