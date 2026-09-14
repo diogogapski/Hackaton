@@ -1,10 +1,11 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+import { resolverDatabaseUrl, usaPostgres } from "./src/lib/database-url";
 
-// DATABASE_URL decide o banco: postgres://... (Railway) usa o schema/migrations
-// gerados em prisma/postgres; qualquer outra (file:...) usa SQLite.
-const url = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
-const dir = url.startsWith("postgres") ? "prisma/postgres" : "prisma";
+// O banco é descoberto sozinho (ver src/lib/database-url.ts): PostgreSQL na Railway usa o
+// schema/migrations gerados em prisma/postgres; em desenvolvimento, SQLite.
+const url = resolverDatabaseUrl();
+const dir = usaPostgres() ? "prisma/postgres" : "prisma";
 
 export default defineConfig({
   schema: `${dir}/schema.prisma`,

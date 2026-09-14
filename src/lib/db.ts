@@ -1,20 +1,25 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/src/generated/prisma/client";
+import { resolverDatabaseUrl, usaPostgres as detectarPostgres } from "@/src/lib/database-url";
 
 function createClient() {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL não definida");
+  const url = resolverDatabaseUrl();
+  // Sem URL no build da Railway: não quebra a importação; as consultas avisam se o banco não estiver conectado.
+  const semUrlPostgres = usaPostgres && !url.startsWith("postgres");
+  if (semUrlPostgres && process.env.NEXT_PHASE !== "phase-production-build") {
+    console.warn("[db] PostgreSQL não encontrado: conecte o serviço Postgres ao app (variável DATABASE_URL)");
+  }
 
   // O adapter segue a URL; o `provider` do schema.prisma precisa combinar com ela.
-  const adapter = url.startsWith("postgres")
-    ? new PrismaPg({ connectionString: url })
+  const adapter = usaPostgres
+    ? new PrismaPg({ connectionString: semUrlPostgres ? undefined : url })
     : new PrismaBetterSqlite3({ url });
 
   return new PrismaClient({ adapter });
 }
 
-const usaPostgres = (process.env.DATABASE_URL ?? "").startsWith("postgres");
+const usaPostgres = detectarPostgres();
 
 /**
  * Filtro "contém" sem diferenciar maiúsculas nos dois bancos: o SQLite já ignora

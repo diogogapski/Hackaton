@@ -19,6 +19,7 @@
     "db:pg:sync": "node scripts/prisma-postgres.mjs",
     "db:pg:check": "node scripts/prisma-postgres.mjs --check",
     "admin:create": "tsx prisma/create-admin.ts",
+    "admin:ensure": "tsx prisma/create-admin.ts --se-configurado",
     "postinstall": "prisma generate"
   },
   "dependencies": {

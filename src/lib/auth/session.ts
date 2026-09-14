@@ -1,13 +1,28 @@
+import { createHash } from "node:crypto";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
+import { resolverDatabaseUrl } from "@/src/lib/database-url";
 
 export const SESSION_COOKIE = "hackif_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
+let chave: Uint8Array | undefined;
+
+/**
+ * AUTH_SECRET assina as sessões. Se não for configurada, deriva um segredo estável da URL do PostgreSQL
+ * (que contém a senha do banco e só a infraestrutura conhece), para o deploy funcionar sem configuração.
+ * Trocar a senha do banco, nesse caso, desloga todo mundo.
+ */
 function secret() {
-  const value = process.env.AUTH_SECRET;
-  if (!value) throw new Error("AUTH_SECRET não definida");
-  return new TextEncoder().encode(value);
+  if (chave) return chave;
+  let value = process.env.AUTH_SECRET;
+  if (!value) {
+    const url = resolverDatabaseUrl();
+    if (!url.startsWith("postgres") || !/:[^@/]+@/.test(url)) throw new Error("AUTH_SECRET não definida");
+    value = createHash("sha256").update(`hackif-sessao:${url}`).digest("base64url");
+  }
+  chave = new TextEncoder().encode(value);
+  return chave;
 }
 
 export async function createSession(userId: string) {

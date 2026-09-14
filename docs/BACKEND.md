@@ -231,7 +231,10 @@ Retenção de dados: `Hackathon.retencaoDadosDias` + descarte manual em `/admin/
 
 ## SQLite (dev) e PostgreSQL (Railway)
 
-A `DATABASE_URL` decide tudo (`prisma.config.ts` e `src/lib/db.ts`):
+O banco é descoberto sozinho por `src/lib/database-url.ts` (usado em `prisma.config.ts` e `src/lib/db.ts`):
+`DATABASE_URL` → `DATABASE_PRIVATE_URL` → `DATABASE_PUBLIC_URL` → variáveis `PGHOST/PGUSER/PGPASSWORD/PGPORT/PGDATABASE`
+→ SQLite local. Na Railway (`RAILWAY_ENVIRONMENT`) o client é sempre gerado para PostgreSQL, mesmo que a
+URL não exista no build.
 
 | URL | Schema | Migrations | Adapter |
 |---|---|---|---|
@@ -250,21 +253,20 @@ Commite as duas pastas de migrations.
 
 ## Deploy na Railway
 
-Já configurado em `railway.json` (Railpack, `preDeployCommand: npm run db:deploy`, healthcheck `/api/health`).
+Já configurado em `railway.json` (Railpack; pre-deploy `npm run db:deploy && npm run admin:ensure`;
+healthcheck `/api/health`).
 
-1. Crie um serviço **PostgreSQL** e o serviço da aplicação a partir do repositório.
+1. Crie o serviço da aplicação a partir do repositório e um serviço **PostgreSQL** no mesmo projeto.
 2. Variáveis do serviço da aplicação:
-   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (precisa existir também no build, para gerar o client Postgres)
-   - `AUTH_SECRET` = valor aleatório longo
-   - opcional: `APP_URL` (só compõe o link de redefinição de senha exibido no console em desenvolvimento)
+   - banco: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (ou qualquer variável da lista acima)
+   - administrador inicial: `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME` — criado/promovido a cada deploy
+     (a senha de uma conta existente nunca é alterada). **Não commitar a senha: o repositório é público.**
+   - recomendadas: `AUTH_SECRET` (sem ela, o segredo da sessão é derivado da URL do banco) e `APP_URL`
+     (link do convite de jurado)
    - opcionais de rate limit: `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`
-3. Deploy. As migrations rodam no pre-deploy; `/api/health` responde 200 quando o banco está acessível.
-4. Crie o primeiro admin (o seed é bloqueado em produção). Localmente, com a URL **pública** do Postgres:
+3. Deploy. Migrations e admin rodam no pre-deploy; `/api/health` responde 200 quando o banco está acessível.
 
-   ```bash
-   DATABASE_URL="<DATABASE_PUBLIC_URL da Railway>" ADMIN_EMAIL=... ADMIN_SENHA=... ADMIN_NOME="..." npm run admin:create
-   ```
-
-Validado contra PostgreSQL real (build de produção + `next start` + `test:fluxo` completo). O mesmo roda no CI.
+Validado contra PostgreSQL real simulando a Railway (sem `.env`, sem `DATABASE_URL` no build, só `PG*` em
+runtime, sem `AUTH_SECRET`): build, migrations, criação do admin, login e rotas de admin.
 
 Buscas por texto usam `contem()` de `src/lib/db.ts`, que ignora maiúsculas nos dois bancos.

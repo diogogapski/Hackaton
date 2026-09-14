@@ -112,8 +112,9 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 ## O que falta
 
 ### Próximos passos técnicos
-1. Na Railway: PostgreSQL + variáveis `DATABASE_URL` (também no build), `AUTH_SECRET`, `APP_URL`
-   (usada no link do convite de jurado); depois `npm run admin:create`.
+1. Na Railway: serviço PostgreSQL + variáveis `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`,
+   `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME` (o admin é criado no pre-deploy) e, recomendado, `AUTH_SECRET`
+   e `APP_URL`. Detalhes em `docs/BACKEND.md` → Deploy na Railway.
 
 ### Front (Dev Front)
 - Home: integrar dados reais da edição (datas, local, cronograma, desafios, vencedores).
