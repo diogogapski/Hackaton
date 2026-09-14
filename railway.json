@@ -5,8 +5,9 @@
   },
   "deploy": {
     "preDeployCommand": ["npm run db:deploy && npm run admin:ensure"],
-    "startCommand": "npm run start",
+    "startCommand": "npm run start:railway",
     "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE"
   }
 }

@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/prisma-postgres.mjs --check",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
+    "start:railway": "prisma migrate deploy && tsx prisma/create-admin.ts --se-configurado && next start",
     "lint": "eslint",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "test:fluxo": "node scripts/teste-fluxo.mjs",

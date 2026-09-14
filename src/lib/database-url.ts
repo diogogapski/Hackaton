@@ -17,10 +17,14 @@ export function resolverDatabaseUrl(env: Record<string, string | undefined> = pr
   return "file:./prisma/dev.db";
 }
 
-/** Na Railway (ou com NODE_ENV=production) o banco é sempre PostgreSQL, mesmo se a URL só existir em runtime. */
+/**
+ * Na Railway ou em produção sem URL, o banco é sempre PostgreSQL — mesmo que a URL só exista em runtime
+ * (o client do Prisma é gerado no build e precisa já sair para PostgreSQL). SQLite só com `file:` explícito
+ * ou em desenvolvimento.
+ */
 export function usaPostgres(env: Record<string, string | undefined> = process.env): boolean {
   const url = resolverDatabaseUrl(env);
   if (url.startsWith("postgres")) return true;
-  const semUrl = !env.DATABASE_URL;
-  return semUrl && Boolean(env.RAILWAY_ENVIRONMENT || env.RAILWAY_ENVIRONMENT_NAME || env.RAILWAY_PROJECT_ID);
+  if (env.DATABASE_URL) return false;
+  return Boolean(env.RAILWAY_ENVIRONMENT || env.RAILWAY_ENVIRONMENT_NAME || env.RAILWAY_PROJECT_ID || env.RAILWAY_SERVICE_ID || env.NODE_ENV === "production");
 }
