@@ -3,17 +3,39 @@
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const navigationItems = [
   { label: "SOBRE", href: "/sobre" },
-  { label: "DESAFIOS", href: "/#desafios" },
-  { label: "AGENDA", href: "/#agenda" },
+  { label: "DESAFIOS", href: "/desafios" },
+  { label: "AGENDA", href: "/agenda" },
   { label: "COMO PARTICIPAR", href: "/#participar" },
-  { label: "RESULTADOS", href: "/#resultados" },
+  { label: "RESULTADOS", href: "/resultados" },
   { label: "REGULAMENTO", href: "/regulamento" },
-  { label: "FAQ", href: "/#faq" },
+  { label: "FAQ", href: "/faq" },
 ] as const;
+
+type Papel = "ADMIN" | "JURADO" | "PARTICIPANTE";
+const areaPorPapel: Record<Papel, string> = { ADMIN: "/admin", JURADO: "/jurado", PARTICIPANTE: "/dashboard" };
+
+/** Quem está logado (para trocar "Inscreva-se" por "Minha área"). Falha silenciosa: mostra o estado deslogado. */
+function useSessao() {
+  const [papel, setPapel] = useState<Papel | null>(null);
+  useEffect(() => {
+    let ativo = true;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { user?: { papel: Papel } | null } | null) => {
+        if (ativo) setPapel(j?.user?.papel ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, []);
+  return papel;
+}
 
 function HeaderBrand() {
   return (
@@ -67,6 +89,14 @@ function HeaderBrand() {
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const papel = useSessao();
+
+  const cta = papel
+    ? { label: "MINHA ÁREA", href: areaPorPapel[papel] }
+    : { label: "INSCREVA-SE", href: "/cadastro" };
+
+  const ativo = (href: string) => !href.includes("#") && (pathname === href || pathname.startsWith(`${href}/`));
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -116,45 +146,55 @@ export function Header() {
             ml-auto
             hidden
             items-center
-            gap-7
+            gap-6
             min-[1280px]:flex
-            xl:gap-9
+            xl:gap-8
           "
           aria-label="Navegação principal"
         >
           {navigationItems.map((item) => (
-            <a
+            <Link
               key={item.href}
               href={item.href}
-              className="
+              aria-current={ativo(item.href) ? "page" : undefined}
+              className={`
                 font-sans
                 text-[0.82rem]
                 font-medium
                 leading-none
                 tracking-[0.02em]
-                text-foreground/75
                 transition-colors
                 duration-200
                 hover:text-accent
                 focus-visible:text-accent
                 focus-visible:outline-none
-              "
+                ${ativo(item.href) ? "text-accent" : "text-foreground/75"}
+              `}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
+        {papel ? null : (
+          <Link
+            href="/login"
+            className="ml-8 hidden font-sans text-[0.82rem] font-bold leading-none tracking-[0.02em] text-foreground transition-colors hover:text-accent min-[1280px]:block"
+          >
+            ENTRAR
+          </Link>
+        )}
+
         <Link
-          href="/#participar"
+          href={cta.href}
           className="
-    ml-9
+    ml-6
     hidden
     h-[48px]
     items-center
     justify-center
     bg-accent
-    px-8
+    px-7
     font-sans
     text-[0.82rem]
     font-bold
@@ -167,7 +207,7 @@ export function Header() {
     min-[1280px]:flex
   "
         >
-          INSCREVA-SE
+          {cta.label}
           <span
             className="ml-2 font-mono !text-[#050706] text-[0.9rem] "
             aria-hidden="true"
@@ -214,7 +254,7 @@ export function Header() {
       {isMenuOpen ? (
         <div
           id="mobile-navigation"
-          className="absolute inset-x-0 top-[92px] border-b border-accent/20 bg-background min-[1280px]:hidden"
+          className="absolute inset-x-0 top-[92px] max-h-[calc(100vh-92px)] overflow-y-auto border-b border-accent/20 bg-background min-[1280px]:hidden"
         >
           <nav
             className="mx-auto max-w-[1440px] px-6 py-8 md:px-10"
@@ -226,26 +266,37 @@ export function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
-                  className="font-display text-[1.25rem] font-semibold uppercase leading-none text-foreground transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none"
+                  className={`font-display text-[1.25rem] font-semibold uppercase leading-none transition-colors hover:text-accent focus-visible:text-accent focus-visible:outline-none ${ativo(item.href) ? "text-accent" : "text-foreground"}`}
                 >
                   {item.label}
                 </Link>
               ))}
             </div>
 
-            <Link
-              href="/#participar"
-              onClick={() => setIsMenuOpen(false)}
-              className="mt-8 inline-flex h-[48px] items-center justify-center bg-accent px-8 font-display text-[0.82rem] font-bold leading-none tracking-[0.015em] !text-[#050706] transition-all duration-200 hover:bg-foreground"
-            >
-              INSCREVA-SE
-              <span
-                className="ml-2 font-mono !text-[#050706] text-[0.9rem]"
-                aria-hidden="true"
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href={cta.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="inline-flex h-[48px] items-center justify-center bg-accent px-8 font-display text-[0.82rem] font-bold leading-none tracking-[0.015em] !text-[#050706] transition-all duration-200 hover:bg-foreground"
               >
-                ↗
-              </span>
-            </Link>
+                {cta.label}
+                <span
+                  className="ml-2 font-mono !text-[#050706] text-[0.9rem]"
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+              </Link>
+              {papel ? null : (
+                <Link
+                  href="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="inline-flex h-[48px] items-center justify-center border border-accent/40 px-8 font-display text-[0.82rem] font-bold leading-none text-foreground transition-colors hover:border-accent hover:text-accent"
+                >
+                  ENTRAR
+                </Link>
+              )}
+            </div>
 
             <div className="mt-8 flex items-center justify-between border-t border-foreground/10 pt-5 font-display text-[0.72rem] uppercase tracking-[0.08em] text-foreground/35">
               <span>HACKIF.SYSTEM</span>

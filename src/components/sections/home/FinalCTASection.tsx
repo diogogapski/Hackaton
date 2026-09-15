@@ -1,3 +1,4 @@
+import Link from "next/link";
 export function FinalCTASection() {
   return (
     <section className="relative overflow-hidden border-t border-foreground/10 bg-background py-24 lg:py-32">
@@ -14,12 +15,12 @@ export function FinalCTASection() {
           <p className="mt-8 max-w-[440px] font-display text-base leading-7 text-foreground/64 md:text-[1.05rem]">
             O próximo desafio pode começar com você.
           </p>
-          <a
-            href="#participar"
+          <Link
+            href="/cadastro"
             className="mt-10 inline-flex min-h-14 items-center bg-accent px-8 font-display text-[0.9rem] !text-[#050706] font-semibold uppercase text-background transition-colors hover:bg-foreground"
           >
             PARTICIPAR DO HACKIF ↗
-          </a>
+          </Link>
         </div>
 
         <div className="relative min-h-[360px] border-l border-t border-accent/16 bg-foreground/[0.012] lg:min-h-[520px]">

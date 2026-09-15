@@ -1,3 +1,4 @@
+import Link from "next/link";
 const eventLabel =
   "// 1\u00ba HACKATHON DE CI\u00caNCIA DA COMPUTA\u00c7\u00c3O";
 const headlineLineOne = "IDEIAS N\u00c3O";
@@ -41,8 +42,8 @@ export function HeroContent() {
       </p>
 
       <div className="mt-7 flex flex-wrap items-center gap-5">
-        <a
-          href="#participar"
+        <Link
+          href="/cadastro"
           className="flex h-[52px] min-w-[225px] items-center justify-between bg-accent px-6 font-display text-[0.75rem] font-bold uppercase tracking-[0.02em] !text-[#050706] transition-colors duration-200 hover:bg-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           INSCREVA SUA EQUIPE
@@ -52,16 +53,16 @@ export function HeroContent() {
           >
             {"\u2197"}
           </span>
-        </a>
-        <a
-          href="#sobre"
+        </Link>
+        <Link
+          href="/sobre"
           className="flex h-[52px] min-w-[175px] items-center justify-between border border-accent/30 bg-transparent px-6 font-display text-[0.75rem] font-bold uppercase tracking-[0.02em] text-foreground/88 transition-colors duration-200 hover:border-accent/70 hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           SAIBA MAIS
           <span className="ml-5 text-[0.78rem] text-accent" aria-hidden="true">
             {"\u2197"}
           </span>
-        </a>
+        </Link>
       </div>
 
       <div className="mt-5 font-display text-[0.7rem] font-semibold uppercase tracking-[0.04em] sm:text-[0.72rem]">

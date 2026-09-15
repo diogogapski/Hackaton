@@ -13,6 +13,8 @@ type Ctx = {
   /** Acrescenta `?hackathonId=` ao caminho quando uma edição foi escolhida. */
   url: (path: string) => string;
   recarregarHackathons: () => void;
+  /** A lista de edições já foi carregada (para não piscar avisos durante o carregamento). */
+  carregado: boolean;
 };
 
 const HackathonContext = createContext<Ctx | null>(null);
@@ -42,7 +44,7 @@ export function HackathonProvider({ children }: { children: ReactNode }) {
 
   return (
     <HackathonContext.Provider
-      value={{ hackathonId: valido, setHackathonId, hackathons, url: (p) => comHackathon(p, valido), recarregarHackathons: reload }}
+      value={{ hackathonId: valido, setHackathonId, hackathons, url: (p) => comHackathon(p, valido), recarregarHackathons: reload, carregado: data !== null }}
     >
       {children}
     </HackathonContext.Provider>

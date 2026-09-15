@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Footer } from "@/src/components/layout/Footer";
 import { Header } from "@/src/components/layout/Header";
-import { BarraSistema } from "@/src/components/publico/BarraSistema";
 import { useApi } from "@/src/hooks/useApi";
 import { Alert, Badge, Empty, formatarData, Loading } from "@/src/components/ui/app";
 
@@ -49,7 +48,6 @@ export default function HackathonPage() {
   return (
     <>
       <Header />
-      <BarraSistema />
       <main className="mx-auto max-w-[1440px] px-6 md:px-10">
         {h.loading && !h.data ? <div className="py-16"><Loading /></div> : null}
         {h.error ? <div className="py-16"><Alert title={h.error.message} /></div> : null}
