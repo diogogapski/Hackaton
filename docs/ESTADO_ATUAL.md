@@ -17,6 +17,14 @@ npm run dev                   # http://localhost:3000
 Contas do seed (senha `Senha@123`): `admin@hackif.dev` (use `/login/servidor`), `jurado@hackif.dev`
 (SIAPE `7654321`), `aluno@hackif.dev` (matrícula `20260001`, líder da "Equipe Exemplo", convite `HACKIF01`).
 
+Site vazio (sem nenhuma edição cadastrada)? O admin mostra um guia para criar a primeira. Para preencher
+tudo de uma vez com conteúdo de exemplo — edição, critérios, desafios, agenda e comunicados, todos
+editáveis no admin depois:
+
+```bash
+BASE=https://seu-site ADMIN_EMAIL=... ADMIN_SENHA=... npm run conteudo:exemplo
+```
+
 Testes:
 
 ```bash

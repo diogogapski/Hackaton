@@ -264,7 +264,15 @@ healthcheck `/api/health`).
    - recomendadas: `AUTH_SECRET` (sem ela, o segredo da sessão é derivado da URL do banco) e `APP_URL`
      (link do convite de jurado)
    - opcionais de rate limit: `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`
-3. Deploy. Migrations e admin rodam no pre-deploy; `/api/health` responde 200 quando o banco está acessível.
+3. Deploy. Migrations e admin rodam no pre-deploy; `/api/health` responde 200 quando o banco está acessível
+   (e mostra `tabelas`, `usuarios` e `edicoes`, para diagnosticar migrations que não rodaram).
+4. Banco novo fica sem edição, e as páginas públicas ficam vazias. Crie a edição em `/admin/hackathons` ou
+   preencha tudo de uma vez com conteúdo de exemplo (edição, critérios, desafios, agenda e comunicados),
+   que depois pode ser editado ou apagado no admin:
+
+   ```bash
+   BASE=https://seu-site ADMIN_EMAIL=... ADMIN_SENHA=... npm run conteudo:exemplo
+   ```
 
 Validado contra PostgreSQL real simulando a Railway (sem `.env`, sem `DATABASE_URL` no build, só `PG*` em
 runtime, sem `AUTH_SECRET`): build, migrations, criação do admin, login e rotas de admin.
