@@ -1,3 +1,4 @@
+import Link from "next/link";
 const nextChallenge = null;
 
 export function NextChallengeSection() {
@@ -30,7 +31,7 @@ export function NextChallengeSection() {
             <div className="grid flex-1 place-items-center py-10"><span className="font-display text-[clamp(5rem,12vw,10rem)] font-semibold leading-none text-foreground/10">?</span></div>
             <div className="mt-auto flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <p className="max-w-[460px] font-display text-[1rem] leading-7 text-foreground/62">O próximo desafio está sendo preparado.</p>
-              <a href="#desafios" className="font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground">VER DESAFIOS ↗</a>
+              <Link href="/desafios" className="font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground">VER DESAFIOS ↗</Link>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Medal, Trophy } from "lucide-react";
 
 type Winner = {
@@ -118,12 +119,12 @@ export function WinnersSection() {
               </div>
 
               <div className="mt-12 flex justify-end">
-                <a
-                  href="#resultados"
+                <Link
+                  href="/resultados"
                   className="font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground"
                 >
                   VER RESULTADOS ↗
-                </a>
+                </Link>
               </div>
             </div>
           </div>

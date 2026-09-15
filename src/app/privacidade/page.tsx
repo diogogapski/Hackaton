@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Footer } from "@/src/components/layout/Footer";
 import { Header } from "@/src/components/layout/Header";
-import { BarraSistema } from "@/src/components/publico/BarraSistema";
 
 export const metadata: Metadata = { title: "Aviso de privacidade · HACKIF" };
 
@@ -58,7 +57,6 @@ export default function PrivacidadePage() {
   return (
     <>
       <Header />
-      <BarraSistema />
       <main className="mx-auto max-w-[960px] px-6 py-16 md:px-10">
         <p className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-accent">{"// lgpd"}</p>
         <h1 className="mt-3 font-display text-[2.6rem] font-semibold uppercase leading-none tracking-[-0.03em] md:text-[3.4rem]">Aviso de privacidade</h1>
