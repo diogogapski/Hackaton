@@ -278,7 +278,12 @@ r = await U.A2.c("POST", "/api/projeto", { nome: "P1b", descricao: "d" }); check
 await new Promise((ok) => setTimeout(ok, 50));
 r = await U.A5.c("POST", "/api/projeto", { nome: "P2", descricao: "Projeto 2", enviar: true }); const P2 = r.json?.projeto?.id; check("T2 envia depois de T1", r.status === 201, r);
 r = await U.A1.c("GET", "/api/projeto"); check("ex-membro não vê projeto da antiga equipe", r.json?.projeto === null, r);
-r = await adm("GET", "/api/admin/projetos"); check("admin lista projetos com situação", r.json?.projetos?.length === 3, r);
+r = await adm("GET", "/api/admin/projetos");
+const projetoAdmin = r.json?.projetos?.find((p) => p.id === P1);
+check("admin lista projetos com situação e todos os detalhes", r.json?.projetos?.length === 3
+  && projetoAdmin?.descricao === "Projeto 1"
+  && projetoAdmin?.solucao === "Editado por outro membro"
+  && projetoAdmin?.arquivos?.[0]?.nome === "pitch.pdf", r);
 
 // ---------------------------------------------------------------- 9
 titulo("9. Jurados e atribuições (doc 02 §4/§5; jurado = User com papel JURADO)");
