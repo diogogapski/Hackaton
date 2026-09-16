@@ -359,8 +359,11 @@ r = await adm("PUT", `/api/admin/projetos/${P2}`, { situacao: "ATIVO" }); check(
 // ---------------------------------------------------------------- 12
 titulo("12. Dashboard e admin de usuários/equipes (doc 01 §5, doc 02 §5)");
 r = await adm("GET", "/api/admin/dashboard");
-check("dashboard: inscrições, equipes, participantes, projetos, jurados, pendentes, agenda",
-  r.json?.equipes?.total === 4 && r.json.participantesEmEquipes === 7 && r.json.projetos.total === 3 && r.json.jurados === 3 && r.json.avaliacoes.pendentes === 0 && r.json.proximaAgenda[0]?.titulo === "Abertura", r.json);
+check("dashboard: inscrições, equipes, participantes, projetos, jurados, pendentes, agenda e comunicados",
+  r.json?.equipes?.total === 4 && r.json.participantesEmEquipes === 7 && r.json.projetos.total === 3
+  && r.json.jurados === 3 && r.json.avaliacoes.pendentes === 0 && r.json.proximaAgenda[0]?.titulo === "Abertura"
+  && r.json.comunicadosRecentes?.some((c) => c.titulo === "Publicado" && c.publicadoEm)
+  && r.json.comunicadosRecentes?.some((c) => c.titulo === "Rascunho" && !c.publicadoEm), r.json);
 r = await adm("GET", "/api/admin/usuarios?papel=JURADO"); check("filtro por papel", r.json?.total === 3, r);
 r = await pub("GET", "/api/equipes"); check("lista pública de equipes desligada por padrão", r.json?.publico === false && r.json.equipes.length === 0, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { exibirEquipesPublicas: true, local: "IFPR Campus Pinhais — Bloco B" });
