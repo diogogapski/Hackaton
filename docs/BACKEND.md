@@ -91,6 +91,8 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 
 **Equipe:** `GET|POST /api/equipe`, `POST /api/equipe/convite`, `POST /api/equipe/entrar`,
 `POST /api/equipe/sair`, `POST /api/equipe/transferir-lideranca`, `DELETE /api/equipe/membro/:userId`.
+Criação, entrada, saída, convite, remoção e transferência de liderança ficam bloqueadas quando as inscrições
+encerram; administradores continuam podendo corrigir integrantes, liderança e situação.
 
 **Projeto (Dev 2):** `GET|POST|PUT /api/projeto` — `enviar: true` submete para avaliação.
 

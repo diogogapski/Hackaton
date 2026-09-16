@@ -80,7 +80,7 @@ export default function CadastroPage() {
       <form onSubmit={cadastrar} className="grid gap-4 md:grid-cols-2">
         <div className="md:col-span-2"><Field label="Nome completo *"><Input required autoComplete="name" value={form.nome} onChange={set("nome")} /></Field></div>
         <div className="md:col-span-2">
-          <Field label={tipo === "servidor" ? "E-mail institucional *" : "E-mail *"}>
+          <Field label="E-mail *" hint={tipo === "servidor" ? "Pode ser institucional ou pessoal" : undefined}>
             <Input required type="email" autoComplete="email" value={form.email} onChange={set("email")} />
           </Field>
         </div>

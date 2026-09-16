@@ -13,6 +13,7 @@ import { Alert, Badge, Button, Loading, PageHeader, Panel, Table } from "@/src/c
 export default function GerenciarEquipePage() {
   const { equipe, h, meuId, souLider, carregado, carregando, erro, recarregar } = useEquipe();
   const [aviso, setAviso] = useState<{ tone: "ok" | "erro"; title: string } | null>(null);
+  const podeAlterar = Boolean(h?.inscricoesAbertas);
 
   async function acao(fn: () => Promise<unknown>, sucesso: string, confirmar?: string) {
     if (confirmar && !confirm(confirmar)) return;
@@ -37,6 +38,9 @@ export default function GerenciarEquipePage() {
       {aviso ? <div className="mb-6"><Alert tone={aviso.tone} title={aviso.title} /></div> : null}
       {carregando ? <Loading /> : null}
       {erro ? <Alert title={erro.message} /> : null}
+      {equipe && h && !podeAlterar ? (
+        <div className="mb-6"><Alert title="Composição da equipe bloqueada" lines={["As inscrições encerraram. Somente a organização pode fazer correções a partir de agora."]} /></div>
+      ) : null}
 
       {carregado && !equipe ? (
         <Panel>
@@ -60,8 +64,8 @@ export default function GerenciarEquipePage() {
                     </td>
                     <td className="text-[0.82rem] text-muted">{m.user.email}</td>
                     <td className="text-right">
-                      {souLider && !lider ? (
-                        <div className="flex justify-end gap-2">
+                      {souLider && !lider && podeAlterar ? (
+                        <div className="flex flex-wrap justify-end gap-2">
                           <Button
                             variant="ghost"
                             className="h-8 px-3"
@@ -100,6 +104,7 @@ export default function GerenciarEquipePage() {
                 <p className="my-4 font-display text-[2.2rem] font-semibold tracking-[0.08em] text-accent">{equipe.codigoConvite ?? "—"}</p>
                 <Button
                   variant="ghost"
+                  disabled={!podeAlterar}
                   onClick={() => acao(() => api("/api/equipe/convite", { method: "POST" }), "Novo código gerado; o anterior deixou de valer")}
                 >
                   Gerar novo código
@@ -109,12 +114,15 @@ export default function GerenciarEquipePage() {
 
             <Panel title="Sair da equipe">
               <p className="mb-4 text-[0.88rem] text-muted">
-                {souLider && equipe.membros.length > 1
+                {!podeAlterar
+                  ? "A saída fica bloqueada após o encerramento das inscrições. Procure a organização se precisar de uma correção."
+                  : souLider && equipe.membros.length > 1
                   ? "Se você sair, o integrante mais antigo vira líder automaticamente."
                   : "Você poderá criar ou entrar em outra equipe enquanto as inscrições estiverem abertas."}
               </p>
               <Button
                 variant="danger"
+                disabled={!podeAlterar}
                 onClick={() => acao(() => api("/api/equipe/sair", { method: "POST" }), "Você saiu da equipe", "Sair da equipe?")}
               >
                 Sair da equipe

@@ -55,7 +55,8 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 - Recuperação e redefinição de senha (Resend em produção; token com hash, 1 h, uso único e atômico).
 - Perfil com documentos bloqueados, troca de senha que derruba outras sessões e exclusão de conta (LGPD).
 - Equipes: criar, entrar por código, convite, remover, sair, transferir liderança; 3–5 integrantes
-  configuráveis; nunca sem líder.
+  configuráveis; nunca sem líder. A composição congela no encerramento das inscrições, com correções
+  posteriores restritas a administradores.
 - **Lista de espera**: com `Hackathon.limiteEquipes` definido, equipes completas além do limite ficam
   `LISTA_ESPERA` (ordem por `Team.completaEm`) e são promovidas sozinhas quando abre vaga (equipe
   desclassificada, desfeita, abaixo do mínimo ou limite aumentado). Equipe em espera não envia projeto.

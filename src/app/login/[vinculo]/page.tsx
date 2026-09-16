@@ -7,14 +7,14 @@ const telas = {
     vinculo: "ALUNO",
     title: "Acesso de",
     highlight: "aluno",
-    description: "Entre com a matrícula e a senha cadastradas.",
+    description: "Entre com a matrícula ou o e-mail e a senha cadastrada.",
     cadastro: "/cadastro/aluno",
   },
   servidor: {
     vinculo: "SERVIDOR",
     title: "Acesso de",
     highlight: "servidor",
-    description: "Servidores e professores entram com o SIAPE e a senha cadastrados.",
+    description: "Servidores e professores entram com o SIAPE ou o e-mail e a senha cadastrada.",
     cadastro: "/cadastro/servidor",
   },
   externo: {
