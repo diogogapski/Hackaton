@@ -84,7 +84,7 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 
 **Auth (Dev 1):** `POST /api/auth/register/{aluno|servidor|externo}` (exige `aceiteTermos: true`),
 `POST /api/auth/login` (`identificador` = e-mail, ou matrícula/SIAPE/CPF + `vinculo`),
-`POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/recuperar-senha` (sem envio de e-mail; link só no console em dev),
+`POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/recuperar-senha` (Resend em produção; console em desenvolvimento),
 `POST /api/auth/redefinir-senha`.
 
 **Perfil:** `GET|PUT /api/perfil` (só nome, e-mail, telefone), `DELETE /api/perfil` (exclusão da conta, exige senha), `PUT /api/perfil/senha`.
@@ -123,7 +123,7 @@ layout (`getCurrentUser` + `redirect`); menus por papel em `src/components/layou
 |---|---|---|
 | `/cadastro` | público | cadastro de aluno, servidor ou egresso/externo, com aceite dos termos |
 | `/entrar` | público | login por e-mail ou matrícula/SIAPE/CPF + vínculo; redireciona pelo papel |
-| `/recuperar-senha`, `/redefinir-senha` | público | gera o link (console em dev) e define nova senha |
+| `/recuperar-senha`, `/redefinir-senha` | público | envia o link por e-mail (console em dev) e define nova senha |
 | `/hackathon` | público | edição atual, desafios publicados, agenda, comunicados |
 | `/resultados` | público | pódio e ranking após publicação (notas só se `exibirNotasPublicas`) |
 | `/regulamento` | público | `Hackathon.regulamentoTexto` e link para `regulamentoUrl` |
@@ -262,7 +262,9 @@ healthcheck `/api/health`).
    - administrador inicial: `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME` — criado/promovido a cada deploy
      (a senha de uma conta existente nunca é alterada). **Não commitar a senha: o repositório é público.**
    - recomendadas: `AUTH_SECRET` (sem ela, o segredo da sessão é derivado da URL do banco) e `APP_URL`
-     (link do convite de jurado)
+     (links de recuperação e convite; se ausente, usa `RAILWAY_PUBLIC_DOMAIN`)
+   - e-mail: `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` e `EMAIL_FROM` com um remetente de domínio
+     verificado na Resend, por exemplo `HACKIF <nao-responda@seu-dominio.com>`
    - opcionais de rate limit: `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`
 3. Deploy. Migrations e admin rodam no pre-deploy; `/api/health` responde 200 quando o banco está acessível
    (e mostra `tabelas`, `usuarios` e `edicoes`, para diagnosticar migrations que não rodaram).

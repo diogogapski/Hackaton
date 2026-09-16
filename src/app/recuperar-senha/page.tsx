@@ -26,7 +26,7 @@ export default function RecuperarSenhaPage() {
       tag="senha"
       title="Recuperar"
       highlight="senha"
-      description="Informe o e-mail da conta. Não há envio de e-mail no momento: em desenvolvimento, o link de redefinição aparece no console do servidor."
+      description="Informe o e-mail da conta. Enviaremos um link de redefinição válido por uma hora."
     >
       {enviado ? (
         <Alert tone="ok" title="Solicitação registrada" lines={["Se o e-mail estiver cadastrado, um link de redefinição foi gerado."]} />
@@ -34,7 +34,7 @@ export default function RecuperarSenhaPage() {
         <form onSubmit={enviar} className="grid gap-4">
           <Field label="E-mail"><Input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
           {erro ? <Alert title={(erro as Error).message} lines={detalhesDoErro(erro)} /> : null}
-          <Button type="submit" className="h-12">Gerar link</Button>
+          <Button type="submit" className="h-12">Enviar link</Button>
         </form>
       )}
       <AuthLinks links={[{ href: "/login", label: "Voltar ao login" }]} />

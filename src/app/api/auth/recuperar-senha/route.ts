@@ -1,23 +1,35 @@
 import { prisma } from "@/src/lib/db";
-import { parseBody, route } from "@/src/lib/http";
+import { HttpError, parseBody, route } from "@/src/lib/http";
 import { createToken } from "@/src/lib/auth/password";
 import { clientIp, exigirDentroDoLimite, registrarTentativa } from "@/src/lib/auth/rate-limit";
 import { recuperarSenhaSchema } from "@/src/server/identidade/schemas";
+import {
+  ErroConfiguracaoEmail,
+  enviarRecuperacaoSenha,
+  obterConfiguracaoEmail,
+} from "@/src/server/email/recuperacao-senha";
 
 const VALIDADE_MS = 60 * 60 * 1000;
 
-/**
- * Sem envio de e-mail (fora do escopo). O token é gerado e, apenas em
- * desenvolvimento, o link aparece no console — nunca nos logs de produção.
- */
 export const POST = route(async (request) => {
   const { email } = await parseBody(request, recuperarSenhaSchema);
+
+  let configuracao;
+  try {
+    configuracao = obterConfiguracaoEmail();
+  } catch (error) {
+    if (error instanceof ErroConfiguracaoEmail) {
+      console.error(`[recuperar-senha] configuração inválida: ${error.message}`);
+      throw new HttpError(503, "Recuperação de senha temporariamente indisponível");
+    }
+    throw error;
+  }
 
   const ip = clientIp(request);
   await exigirDentroDoLimite("recuperar-senha", ip);
   await registrarTentativa("recuperar-senha", ip);
 
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, situacao: true } });
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, nome: true, email: true, situacao: true } });
 
   if (user && user.situacao === "ATIVO") {
     const { token, tokenHash } = createToken();
@@ -31,9 +43,15 @@ export const POST = route(async (request) => {
       }),
     ]);
 
-    if (process.env.NODE_ENV !== "production") {
-      const base = process.env.APP_URL ?? "http://localhost:3000";
-      console.info(`[recuperar-senha] ${email}: ${base}/redefinir-senha?token=${token}`);
+    try {
+      await enviarRecuperacaoSenha(configuracao, user, token);
+    } catch (error) {
+      // A resposta continua genérica para não revelar quais e-mails existem.
+      await prisma.passwordReset.updateMany({
+        where: { tokenHash, usadoEm: null },
+        data: { usadoEm: new Date() },
+      }).catch(() => {});
+      console.error("[recuperar-senha] não foi possível enviar o e-mail", error);
     }
   }
 
