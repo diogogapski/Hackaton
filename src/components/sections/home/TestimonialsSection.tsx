@@ -38,7 +38,7 @@ export function TestimonialsSection() {
     <section className="bg-background py-24 lg:py-32">
       <div className="mx-auto max-w-[1440px] px-6 md:px-10">
         <p className="font-display text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-foreground/55">
-          <span className="text-accent">06 //</span> EXPERIÊNCIAS
+          <span className="text-accent">07 //</span> EXPERIÊNCIAS
         </p>
         <div className="mt-7 grid gap-16 lg:grid-cols-[0.42fr_0.58fr] lg:items-start">
           <h2 className="font-display text-[clamp(2.25rem,5vw,5.4rem)] font-semibold uppercase leading-[0.98] tracking-0">

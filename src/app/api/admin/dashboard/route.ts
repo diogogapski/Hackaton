@@ -19,6 +19,7 @@ export const GET = route(async (request) => {
     avaliacoesPendentes,
     avaliacoesConcluidas,
     proximaAgenda,
+    comunicadosRecentes,
   ] = await Promise.all([
     prisma.user.count({ where: { papel: "PARTICIPANTE" } }),
     prisma.team.groupBy({ by: ["situacao"], where: { hackathonId: id }, _count: { _all: true } }),
@@ -31,6 +32,12 @@ export const GET = route(async (request) => {
       where: { hackathonId: id, horarioInicio: { gte: new Date() } },
       orderBy: { horarioInicio: "asc" },
       take: 5,
+    }),
+    prisma.comunicado.findMany({
+      where: { hackathonId: id },
+      orderBy: { atualizadoEm: "desc" },
+      take: 5,
+      select: { id: true, titulo: true, conteudo: true, publicadoEm: true, origem: true, atualizadoEm: true },
     }),
   ]);
 
@@ -47,5 +54,6 @@ export const GET = route(async (request) => {
     jurados,
     avaliacoes: { pendentes: avaliacoesPendentes, concluidas: avaliacoesConcluidas },
     proximaAgenda,
+    comunicadosRecentes,
   });
 });

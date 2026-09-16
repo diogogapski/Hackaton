@@ -1,7 +1,7 @@
 import Link from "next/link";
-const nextChallenge = null;
+import type { DesafioHome } from "./types";
 
-export function NextChallengeSection() {
+export function NextChallengeSection({ desafio }: { desafio: DesafioHome | null }) {
   return (
     <section id="desafios" className="relative overflow-hidden border-t border-foreground/10 bg-background py-24 lg:py-32">
       <div className="absolute inset-0 opacity-35" aria-hidden="true" style={{ backgroundImage: "linear-gradient(rgba(182,255,0,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(182,255,0,0.025) 1px, transparent 1px)", backgroundSize: "84px 84px" }} />
@@ -22,15 +22,22 @@ export function NextChallengeSection() {
           <div className="flex h-full min-h-[340px] flex-col">
             <div className="flex items-start justify-between gap-6">
               <p className="font-display text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-foreground/55">NEXT_CHALLENGE</p>
-              <p className="font-display text-[0.72rem] uppercase text-foreground/35">DATA_SOURCE // LOCAL</p>
+              <p className="font-display text-[0.72rem] uppercase text-foreground/35">{desafio?.categoria ?? "EDIÇÃO ATUAL"}</p>
             </div>
             <div className="mt-12">
               <p className="font-display text-[0.72rem] uppercase tracking-[0.08em] text-foreground/45">STATUS</p>
-              <div className="mt-3 flex items-center gap-3 font-display text-[1rem] font-semibold uppercase text-accent"><span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true" />{nextChallenge ?? "EM BREVE"}</div>
+              <div className="mt-3 flex items-center gap-3 font-display text-[1rem] font-semibold uppercase text-accent"><span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true" />{desafio ? "PUBLICADO" : "EM BREVE"}</div>
             </div>
-            <div className="grid flex-1 place-items-center py-10"><span className="font-display text-[clamp(5rem,12vw,10rem)] font-semibold leading-none text-foreground/10">?</span></div>
+            <div className="grid flex-1 content-center py-10">
+              {desafio ? (
+                <div className="max-w-3xl">
+                  <h3 className="font-display text-[clamp(2rem,5vw,4.5rem)] font-semibold uppercase leading-none text-foreground">{desafio.titulo}</h3>
+                  <p className="mt-6 max-w-2xl text-[1rem] leading-7 text-foreground/62">{desafio.descricao}</p>
+                </div>
+              ) : <span className="text-center font-display text-[clamp(5rem,12vw,10rem)] font-semibold leading-none text-foreground/10">?</span>}
+            </div>
             <div className="mt-auto flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <p className="max-w-[460px] font-display text-[1rem] leading-7 text-foreground/62">O próximo desafio está sendo preparado.</p>
+              <p className="max-w-[460px] font-display text-[1rem] leading-7 text-foreground/62">{desafio?.responsavel ? `Proposto por ${desafio.responsavel}.` : desafio ? "Confira os detalhes e prepare sua solução." : "O próximo desafio está sendo preparado."}</p>
               <Link href="/desafios" className="font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground">VER DESAFIOS ↗</Link>
             </div>
           </div>

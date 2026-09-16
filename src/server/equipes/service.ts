@@ -87,6 +87,12 @@ function exigirParticipante(user: CurrentUser) {
   if (user.papel !== "PARTICIPANTE") throw forbidden("Apenas participantes podem integrar equipes");
 }
 
+function exigirAlteracoesAbertas(hackathon: { status: string; inscricaoInicio: Date | null; inscricaoFim: Date | null }) {
+  if (!inscricoesAbertas(hackathon)) {
+    throw badRequest("A composição das equipes está bloqueada porque as inscrições encerraram");
+  }
+}
+
 export async function criarEquipe(user: CurrentUser, nome: string, hackathonId?: string) {
   exigirParticipante(user);
   const hackathon = await resolveHackathon(hackathonId);
@@ -112,9 +118,10 @@ export async function criarEquipe(user: CurrentUser, nome: string, hackathonId?:
 }
 
 export async function regenerarConvite(user: CurrentUser, teamId: string) {
-  const team = await prisma.team.findUnique({ where: { id: teamId } });
+  const team = await prisma.team.findUnique({ where: { id: teamId }, include: { hackathon: true } });
   if (!team) throw notFound("Equipe não encontrada");
   if (team.liderId !== user.id) throw forbidden("Apenas o líder pode gerar convites");
+  exigirAlteracoesAbertas(team.hackathon);
 
   return prisma.team.update({
     where: { id: teamId },
@@ -167,15 +174,19 @@ export async function desligarDeTodasAsEquipes(tx: Tx, userId: string) {
 }
 
 export async function sairDaEquipe(user: CurrentUser, teamId: string) {
+  const team = await prisma.team.findUnique({ where: { id: teamId }, include: { hackathon: true } });
+  if (!team) throw notFound("Equipe não encontrada");
+  exigirAlteracoesAbertas(team.hackathon);
   await prisma.$transaction((tx) => desligarMembro(tx, teamId, user.id));
 }
 
 export async function removerMembro(user: CurrentUser, teamId: string, alvoUserId: string) {
-  const team = await prisma.team.findUnique({ where: { id: teamId } });
+  const team = await prisma.team.findUnique({ where: { id: teamId }, include: { hackathon: true } });
   if (!team) throw notFound("Equipe não encontrada");
 
   const isAdmin = user.papel === "ADMIN";
   if (!isAdmin && team.liderId !== user.id) throw forbidden("Apenas o líder ou um admin pode remover membros");
+  if (!isAdmin) exigirAlteracoesAbertas(team.hackathon);
   if (!isAdmin && alvoUserId === user.id) {
     throw badRequest("Para sair da equipe use /api/equipe/sair");
   }
@@ -185,9 +196,10 @@ export async function removerMembro(user: CurrentUser, teamId: string, alvoUserI
 }
 
 export async function transferirLideranca(user: CurrentUser, teamId: string, novoLiderId: string) {
-  const team = await prisma.team.findUnique({ where: { id: teamId } });
+  const team = await prisma.team.findUnique({ where: { id: teamId }, include: { hackathon: true } });
   if (!team) throw notFound("Equipe não encontrada");
   if (team.liderId !== user.id && user.papel !== "ADMIN") throw forbidden("Apenas o líder atual pode transferir");
+  if (user.papel !== "ADMIN") exigirAlteracoesAbertas(team.hackathon);
 
   const membro = await prisma.teamMember.findFirst({ where: { teamId, userId: novoLiderId, saiuEm: null } });
   if (!membro) throw badRequest("O novo líder precisa ser membro ativo da equipe");

@@ -136,7 +136,7 @@ function AboutHackif() {
 
 export function ConceptSection() {
   return (
-    <section className="bg-background" aria-labelledby="concept-title">
+    <section id="sobre" className="bg-background" aria-labelledby="concept-title">
       <div className="mx-auto max-w-[1440px] border-t border-foreground/10 px-6 md:px-10">
         <div className="relative grid lg:grid-cols-2">
           <ConceptProcess />

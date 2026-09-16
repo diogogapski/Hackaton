@@ -14,6 +14,7 @@ type Dashboard = {
   jurados: number;
   avaliacoes: { pendentes: number; concluidas: number };
   proximaAgenda: { id: string; titulo: string; horarioInicio: string; local: string | null }[];
+  comunicadosRecentes: { id: string; titulo: string; conteudo: string; publicadoEm: string | null; origem: string | null; atualizadoEm: string }[];
 };
 
 const porSituacao = (m: Record<string, number>) =>
@@ -53,7 +54,7 @@ export default function AdminDashboardPage() {
             <Stat label="Avaliações concluídas" value={data.avaliacoes.concluidas} />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 xl:grid-cols-3">
             <Panel title="Próximos itens da agenda">
               {data.proximaAgenda.length === 0 ? <Empty>Sem itens futuros</Empty> : (
                 <ul className="grid gap-3">
@@ -61,6 +62,27 @@ export default function AdminDashboardPage() {
                     <li key={a.id} className="flex justify-between gap-4 border-b border-foreground/8 pb-2 text-[0.9rem]">
                       <span>{a.titulo}</span>
                       <span className="font-mono text-[0.78rem] text-muted">{formatarData(a.horarioInicio)} · {a.local ?? "—"}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+
+            <Panel
+              title="Comunicados recentes"
+              actions={<Link href="/admin/comunicados" className="font-mono text-[0.7rem] uppercase text-accent hover:underline">Gerenciar →</Link>}
+            >
+              {data.comunicadosRecentes.length === 0 ? <Empty>Sem comunicados</Empty> : (
+                <ul className="grid gap-4">
+                  {data.comunicadosRecentes.map((comunicado) => (
+                    <li key={comunicado.id} className="border-l-2 border-foreground/15 pl-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <strong className="text-[0.9rem]">{comunicado.titulo}</strong>
+                        <Badge tone={comunicado.publicadoEm ? "ok" : "neutro"}>{comunicado.publicadoEm ? "publicado" : "rascunho"}</Badge>
+                        {comunicado.origem === "AGENDA" ? <Badge>agenda</Badge> : null}
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[0.8rem] text-muted">{comunicado.conteudo}</p>
+                      <p className="mt-1 font-mono text-[0.68rem] uppercase text-muted">{formatarData(comunicado.publicadoEm ?? comunicado.atualizadoEm)}</p>
                     </li>
                   ))}
                 </ul>

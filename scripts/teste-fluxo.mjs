@@ -278,7 +278,12 @@ r = await U.A2.c("POST", "/api/projeto", { nome: "P1b", descricao: "d" }); check
 await new Promise((ok) => setTimeout(ok, 50));
 r = await U.A5.c("POST", "/api/projeto", { nome: "P2", descricao: "Projeto 2", enviar: true }); const P2 = r.json?.projeto?.id; check("T2 envia depois de T1", r.status === 201, r);
 r = await U.A1.c("GET", "/api/projeto"); check("ex-membro não vê projeto da antiga equipe", r.json?.projeto === null, r);
-r = await adm("GET", "/api/admin/projetos"); check("admin lista projetos com situação", r.json?.projetos?.length === 3, r);
+r = await adm("GET", "/api/admin/projetos");
+const projetoAdmin = r.json?.projetos?.find((p) => p.id === P1);
+check("admin lista projetos com situação e todos os detalhes", r.json?.projetos?.length === 3
+  && projetoAdmin?.descricao === "Projeto 1"
+  && projetoAdmin?.solucao === "Editado por outro membro"
+  && projetoAdmin?.arquivos?.[0]?.nome === "pitch.pdf", r);
 
 // ---------------------------------------------------------------- 9
 titulo("9. Jurados e atribuições (doc 02 §4/§5; jurado = User com papel JURADO)");
@@ -354,8 +359,11 @@ r = await adm("PUT", `/api/admin/projetos/${P2}`, { situacao: "ATIVO" }); check(
 // ---------------------------------------------------------------- 12
 titulo("12. Dashboard e admin de usuários/equipes (doc 01 §5, doc 02 §5)");
 r = await adm("GET", "/api/admin/dashboard");
-check("dashboard: inscrições, equipes, participantes, projetos, jurados, pendentes, agenda",
-  r.json?.equipes?.total === 4 && r.json.participantesEmEquipes === 7 && r.json.projetos.total === 3 && r.json.jurados === 3 && r.json.avaliacoes.pendentes === 0 && r.json.proximaAgenda[0]?.titulo === "Abertura", r.json);
+check("dashboard: inscrições, equipes, participantes, projetos, jurados, pendentes, agenda e comunicados",
+  r.json?.equipes?.total === 4 && r.json.participantesEmEquipes === 7 && r.json.projetos.total === 3
+  && r.json.jurados === 3 && r.json.avaliacoes.pendentes === 0 && r.json.proximaAgenda[0]?.titulo === "Abertura"
+  && r.json.comunicadosRecentes?.some((c) => c.titulo === "Publicado" && c.publicadoEm)
+  && r.json.comunicadosRecentes?.some((c) => c.titulo === "Rascunho" && !c.publicadoEm), r.json);
 r = await adm("GET", "/api/admin/usuarios?papel=JURADO"); check("filtro por papel", r.json?.total === 3, r);
 r = await pub("GET", "/api/equipes"); check("lista pública de equipes desligada por padrão", r.json?.publico === false && r.json.equipes.length === 0, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { exibirEquipesPublicas: true, local: "IFPR Campus Pinhais — Bloco B" });
@@ -384,6 +392,11 @@ titulo("13. Prazos e janelas configuráveis");
 await adm("PUT", `/api/admin/hackathons/${H}`, { inscricaoInicio: dias(-3), inscricaoFim: dias(-1) });
 r = await U.A1.c("POST", "/api/equipe", { nome: `Tarde ${s}` }); check("inscrições encerradas: não cria equipe", r.status === 400, r);
 r = await U.A1.c("POST", "/api/equipe/entrar", { codigo: cod2 }); check("inscrições encerradas: não entra em equipe", r.status === 400, r);
+r = await U.A3.c("POST", "/api/equipe/convite"); check("inscrições encerradas: líder não gera convite", r.status === 400, r);
+r = await U.A3.c("POST", "/api/equipe/transferir-lideranca", { userId: U.A2.id }); check("inscrições encerradas: líder não transfere liderança", r.status === 400, r);
+r = await U.A3.c("DELETE", `/api/equipe/membro/${U.A4.id}`); check("inscrições encerradas: líder não remove integrante", r.status === 400, r);
+r = await U.A2.c("POST", "/api/equipe/sair"); check("inscrições encerradas: integrante não sai", r.status === 400, r);
+r = await adm("PUT", `/api/admin/equipes/${T1}`, { liderId: U.A2.id }); check("inscrições encerradas: admin ainda corrige liderança", r.status === 200 && r.json.equipe.liderId === U.A2.id, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { status: "EM_ANDAMENTO", prazoSubmissao: dias(-0.01) });
 r = await U.A2.c("PUT", "/api/projeto", { nome: "P1 fora do prazo" }); check("prazo de submissão vencido: 400", r.status === 400, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { prazoSubmissao: null });
@@ -426,6 +439,13 @@ r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, 
 r = await U.A3.c("GET", `/api/admin/projetos/${P1}/registros`); check("participante não vê a trilha: 403", r.status === 403, r);
 
 titulo("16. Páginas do planejamento (31 telas) e rotas antigas");
+const home = await fetch(BASE + "/");
+const homeHtml = await home.text();
+check("Home usa edição, desafio, agenda e resultado publicados", home.status === 200
+  && homeHtml.includes(`HackIF Fluxo ${s}`)
+  && homeHtml.includes("Desafio publicado")
+  && homeHtml.includes("Abertura")
+  && homeHtml.includes("Projeto 1"), { status: home.status });
 const paginasPublicas = ["/", "/hackathon", "/desafios", "/agenda", "/resultados", "/regulamento", "/privacidade", "/login", "/login/aluno", "/login/servidor", "/login/externo", "/cadastro/aluno", "/cadastro/servidor", "/cadastro/externo", "/recuperar-senha", "/sobre"];
 const publicasOk = [];
 for (const p of paginasPublicas) if ((await fetch(BASE + p, { redirect: "manual" })).status === 200) publicasOk.push(p);
