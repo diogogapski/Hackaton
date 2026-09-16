@@ -2,15 +2,19 @@
 
 import { Clock3, Trophy, Users } from "lucide-react";
 import { motion } from "framer-motion";
+import type { EdicaoHome } from "../home/types";
 
-const stats = [
-  { icon: Users, value: "15–25", description: "EQUIPES ESPERADAS" },
-  { icon: Users, value: "03–05", description: "INTEGRANTES POR EQUIPE" },
-  { icon: Clock3, value: "24–48H", description: "DE MUITA INOVAÇÃO" },
-  { icon: Trophy, value: "PRÊMIOS", description: "PARA AS MELHORES SOLUÇÕES" },
-] as const;
+export function HeroStats({ edicao }: { edicao: EdicaoHome | null }) {
+  const duracao = edicao
+    ? Math.max(1, Math.ceil((new Date(edicao.dataFim).getTime() - new Date(edicao.dataInicio).getTime()) / 3_600_000))
+    : null;
+  const stats = [
+    { icon: Users, value: edicao?.limiteEquipes ? String(edicao.limiteEquipes).padStart(2, "0") : "15–25", description: edicao?.limiteEquipes ? "EQUIPES DISPONÍVEIS" : "EQUIPES ESPERADAS" },
+    { icon: Users, value: edicao ? `${String(edicao.limiteMinIntegrantes).padStart(2, "0")}–${String(edicao.limiteMaxIntegrantes).padStart(2, "0")}` : "03–05", description: "INTEGRANTES POR EQUIPE" },
+    { icon: Clock3, value: duracao ? `${duracao}H` : "24–48H", description: "DE MUITA INOVAÇÃO" },
+    { icon: Trophy, value: "PRÊMIOS", description: "PARA AS MELHORES SOLUÇÕES" },
+  ] as const;
 
-export function HeroStats() {
   return (
     <motion.div
       className="relative grid border border-foreground/12 bg-background/92 sm:grid-cols-2 lg:grid-cols-4"

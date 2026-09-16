@@ -5,7 +5,7 @@ export function FinalCTASection() {
       <div className="mx-auto grid max-w-[1440px] gap-14 px-6 md:px-10 lg:grid-cols-[0.56fr_0.44fr] lg:items-center">
         <div>
           <p className="font-display text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-foreground/55">
-            <span className="text-accent">07 //</span> SUA VEZ
+            <span className="text-accent">08 //</span> SUA VEZ
           </p>
           <h2 className="mt-7 font-display text-[clamp(2.4rem,6vw,6.8rem)] font-semibold uppercase leading-[0.96] tracking-0">
             <span className="block text-foreground">TODA SOLUÇÃO</span>

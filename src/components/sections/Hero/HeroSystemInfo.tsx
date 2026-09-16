@@ -1,13 +1,16 @@
 import { Crosshair } from "lucide-react";
+import type { EdicaoHome } from "../home/types";
 
-const systemItems = [
-  { label: "CAMPUS:", value: "PINHAIS" },
-  { label: "DURATION:", value: "24 - 48H" },
-  { label: "TEAMS:", value: "15 - 25" },
-  { label: "TEAM SIZE:", value: "03 - 05" },
-] as const;
+const dataCurta = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Sao_Paulo" });
 
-export function HeroSystemInfo() {
+export function HeroSystemInfo({ edicao }: { edicao: EdicaoHome | null }) {
+  const systemItems = [
+    { label: "LOCAL:", value: edicao?.local ?? "IFPR PINHAIS" },
+    { label: "EVENTO:", value: edicao ? `${dataCurta(edicao.dataInicio)} - ${dataCurta(edicao.dataFim)}` : "DATA A DEFINIR" },
+    { label: "EQUIPES:", value: edicao?.limiteEquipes ? `ATÉ ${edicao.limiteEquipes}` : "15 - 25" },
+    { label: "EQUIPE:", value: edicao ? `${edicao.limiteMinIntegrantes} - ${edicao.limiteMaxIntegrantes}` : "03 - 05" },
+  ];
+
   return (
     <aside className="relative z-10 flex h-full flex-col border-l border-accent/15 pl-5 font-mono">
       <p className="mb-10 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-accent">

@@ -126,5 +126,4 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
    `docs/BACKEND.md` → Deploy na Railway.
 
 ### Front (Dev Front)
-- Home: integrar dados reais da edição (datas, local, cronograma, desafios, vencedores).
-- Âncoras da Home sem seção (`#faq`, `#agenda`, `#sobre` no rodapé); imagens e vídeos 3D.
+- Imagens e vídeos 3D finais ainda são espaços reservados no visual original.

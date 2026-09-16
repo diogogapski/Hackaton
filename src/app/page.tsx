@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 import { ConceptSection } from "../components/sections/Concept/ConceptSection";
@@ -7,16 +8,22 @@ import { HowItWorksSection } from "../components/sections/home/HowItWorksSection
 import { NextChallengeSection } from "../components/sections/home/NextChallengeSection";
 import { TestimonialsSection } from "../components/sections/home/TestimonialsSection";
 import { WinnersSection } from "../components/sections/home/WinnersSection";
+import { AgendaPreviewSection } from "../components/sections/home/AgendaPreviewSection";
+import { carregarDadosHome } from "@/src/server/home/dados";
 
-export default function Home() {
+export default async function Home() {
+  await connection();
+  const dados = await carregarDadosHome();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <main aria-label="Conteúdo principal">
-        <Hero />
+        <Hero edicao={dados?.edicao ?? null} />
         <ConceptSection />
-        <NextChallengeSection />
-        <WinnersSection />
+        <NextChallengeSection desafio={dados?.desafio ?? null} />
+        <AgendaPreviewSection agenda={dados?.agenda ?? []} />
+        <WinnersSection winners={dados?.vencedores ?? []} />
         <HowItWorksSection />
         <TestimonialsSection />
         <FinalCTASection />

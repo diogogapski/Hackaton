@@ -426,6 +426,13 @@ r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, 
 r = await U.A3.c("GET", `/api/admin/projetos/${P1}/registros`); check("participante não vê a trilha: 403", r.status === 403, r);
 
 titulo("16. Páginas do planejamento (31 telas) e rotas antigas");
+const home = await fetch(BASE + "/");
+const homeHtml = await home.text();
+check("Home usa edição, desafio, agenda e resultado publicados", home.status === 200
+  && homeHtml.includes(`HackIF Fluxo ${s}`)
+  && homeHtml.includes("Desafio publicado")
+  && homeHtml.includes("Abertura")
+  && homeHtml.includes("Projeto 1"), { status: home.status });
 const paginasPublicas = ["/", "/hackathon", "/desafios", "/agenda", "/resultados", "/regulamento", "/privacidade", "/login", "/login/aluno", "/login/servidor", "/login/externo", "/cadastro/aluno", "/cadastro/servidor", "/cadastro/externo", "/recuperar-senha", "/sobre"];
 const publicasOk = [];
 for (const p of paginasPublicas) if ((await fetch(BASE + p, { redirect: "manual" })).status === 200) publicasOk.push(p);
