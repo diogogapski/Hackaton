@@ -24,8 +24,8 @@ const colunas = [
     titulo: "Acesso",
     links: [
       { label: "Entrar", href: "/login" },
-      { label: "Área do jurado", href: "/login/servidor?next=/jurado" },
-      { label: "Área administrativa", href: "/login/servidor?next=/admin" },
+      { label: "Área do jurado", href: "/login?next=/jurado" },
+      { label: "Área administrativa", href: "/login?next=/admin" },
       { label: "Esqueci minha senha", href: "/recuperar-senha" },
     ],
   },
@@ -69,7 +69,7 @@ export function Footer() {
           <p>© 2026 HACKIF · IFPR — Campus Pinhais</p>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             <Link href="/privacidade" className="transition-colors hover:text-accent">Privacidade</Link>
-            <Link href="/login/servidor?next=/admin" className="transition-colors hover:text-accent">Acesso administrativo ↗</Link>
+            <Link href="/login?next=/admin" className="transition-colors hover:text-accent">Acesso administrativo ↗</Link>
           </div>
         </div>
       </div>

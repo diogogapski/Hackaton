@@ -19,8 +19,13 @@ function whereDoIdentificador(identificador: string, vinculo?: string) {
     case "EGRESSO":
     case "EXTERNO":
       return { cpf: onlyDigits(identificador) };
-    default:
-      return null;
+    default: {
+      // Login único (sem vínculo): o mesmo campo aceita matrícula, SIAPE ou CPF.
+      const digitos = onlyDigits(identificador);
+      const ou: object[] = [{ matricula: identificador }, { siape: identificador }];
+      if (digitos.length === 11) ou.push({ cpf: digitos });
+      return { OR: ou };
+    }
   }
 }
 
@@ -30,9 +35,22 @@ export const POST = route(async (request) => {
   const ip = clientIp(request);
   await exigirDentroDoLimite("login", ip);
 
-  const where = whereDoIdentificador(identificador, vinculo);
-  const user = where ? await prisma.user.findFirst({ where }) : null;
-  const senhaOk = await verifyPassword(senha, user?.senhaHash ?? (await dummyHash));
+  // Matrícula, SIAPE e CPF são únicos cada um, mas um número pode coincidir entre campos de pessoas
+  // diferentes: nesse caso vale a conta cuja senha confere.
+  const candidatos = await prisma.user.findMany({ where: whereDoIdentificador(identificador, vinculo), take: 3 });
+  let user = candidatos[0] ?? null;
+  let senhaOk = false;
+  if (candidatos.length === 0) {
+    await verifyPassword(senha, await dummyHash);
+  } else {
+    for (const candidato of candidatos) {
+      if (await verifyPassword(senha, candidato.senhaHash)) {
+        user = candidato;
+        senhaOk = true;
+        break;
+      }
+    }
+  }
 
   // Egresso e externo usam o mesmo acesso por CPF (planejamento: /login/externo).
   const grupo = (v: string) => (v === "EGRESSO" ? "EXTERNO" : v);
