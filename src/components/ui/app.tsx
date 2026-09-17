@@ -1,4 +1,5 @@
 // Primitivas visuais das áreas logadas/testes, no estilo HACKIF (fundo escuro, neon, mono).
+import { PasswordInput } from "./PasswordInput";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
@@ -66,7 +67,13 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
   );
 }
 
-export const Input = (props: InputHTMLAttributes<HTMLInputElement>) => <input {...props} className={cx(campoBase, props.className)} />;
+/** `type="password"` ganha automaticamente o botão de mostrar/ocultar. */
+export const Input = (props: InputHTMLAttributes<HTMLInputElement>) =>
+  props.type === "password" ? (
+    <PasswordInput {...props} className={cx(campoBase, props.className)} />
+  ) : (
+    <input {...props} className={cx(campoBase, props.className)} />
+  );
 
 export const Textarea = (props: TextareaHTMLAttributes<HTMLTextAreaElement>) => (
   <textarea rows={4} {...props} className={cx(campoBase, "resize-y", props.className)} />
