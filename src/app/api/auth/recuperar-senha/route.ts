@@ -1,5 +1,5 @@
 import { prisma } from "@/src/lib/db";
-import { HttpError, parseBody, route } from "@/src/lib/http";
+import { parseBody, route } from "@/src/lib/http";
 import { createToken } from "@/src/lib/auth/password";
 import { clientIp, exigirDentroDoLimite, registrarTentativa } from "@/src/lib/auth/rate-limit";
 import { recuperarSenhaSchema } from "@/src/server/identidade/schemas";
@@ -19,8 +19,10 @@ export const POST = route(async (request) => {
     configuracao = obterConfiguracaoEmail();
   } catch (error) {
     if (error instanceof ErroConfiguracaoEmail) {
-      console.error(`[recuperar-senha] configuração inválida: ${error.message}`);
-      throw new HttpError(503, "Recuperação de senha temporariamente indisponível");
+      // Sem envio de e-mail configurado, a organização gera o link em /admin/usuarios.
+      // A resposta é igual para qualquer e-mail (não revela contas cadastradas).
+      console.warn(`[recuperar-senha] envio de e-mail desativado: ${error.message}`);
+      return Response.json({ ok: true, envio: "organizacao" });
     }
     throw error;
   }

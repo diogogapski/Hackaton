@@ -164,9 +164,14 @@ r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, vincul
 r = await cliente()("POST", "/api/auth/login", { identificador: `S${s}`, vinculo: "SERVIDOR", senha: "Senha@123" }); check("login por SIAPE + vínculo", r.status === 200, r);
 r = await cliente()("POST", "/api/auth/register/externo", { nome: "Egresso com CPF", email: `egcpf.${s}@t.dev`, vinculo: "EGRESSO", cpf: "111.444.777-35", senha: "Senha@123", aceiteTermos: true });
 r = await cliente()("POST", "/api/auth/login", { identificador: "11144477735", vinculo: "EXTERNO", senha: "Senha@123" });
-check("egresso entra pelo acesso externo com CPF (/login/externo)", r.status === 200 && r.json.user.vinculo === "EGRESSO", r);
+check("egresso entra com CPF", r.status === 200 && r.json.user.vinculo === "EGRESSO", r);
 r = await cliente()("POST", "/api/auth/login", { identificador: "529.982.247-25", vinculo: "EXTERNO", senha: "Senha@123" }); check("login por CPF + vínculo", r.status === 200, r);
-r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, senha: "Senha@123" }); check("matrícula sem vínculo: 401", r.status === 401, r);
+// Login único: o mesmo campo aceita matrícula, SIAPE ou CPF, sem escolher o vínculo.
+r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, senha: "Senha@123" }); check("login único: matrícula sem vínculo", r.status === 200 && r.json.user.email === `a2.${s}@t.dev`, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `S${s}`, senha: "Senha@123" }); check("login único: SIAPE sem vínculo", r.status === 200 && r.json.user.vinculo === "SERVIDOR", r);
+r = await cliente()("POST", "/api/auth/login", { identificador: "529.982.247-25", senha: "Senha@123" }); check("login único: CPF sem vínculo", r.status === 200 && r.json.user.vinculo === "EXTERNO", r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, senha: "errada" }); check("login único: senha errada 401", r.status === 401, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `NAOEXISTE${s}`, senha: "Senha@123" }); check("login único: identificador inexistente 401", r.status === 401, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `a2.${s}@t.dev`, senha: "errada" }); check("senha errada: 401", r.status === 401, r);
 
 // ---------------------------------------------------------------- 5
@@ -366,6 +371,19 @@ check("dashboard: inscrições, equipes, participantes, projetos, jurados, pende
   && r.json.comunicadosRecentes?.some((c) => c.titulo === "Rascunho" && !c.publicadoEm), r.json);
 r = await adm("GET", "/api/admin/usuarios?papel=JURADO"); check("filtro por papel", r.json?.total === 3, r);
 r = await pub("GET", "/api/equipes"); check("lista pública de equipes desligada por padrão", r.json?.publico === false && r.json.equipes.length === 0, r);
+check("andamento público em números mesmo sem a lista (sem dados de pessoas)",
+  r.json?.resumo?.equipesInscritas >= 1 && typeof r.json.resumo.projetosEnviados === "number" && typeof r.json.resumo.equipesEmEspera === "number"
+  && r.json.resumo.resultadosPublicados === false && !JSON.stringify(r.json).includes("@"), r.json);
+
+// Link de nova senha gerado pela organização (quando o envio de e-mail não está ativo).
+await registrar("LS", "aluno", { nome: "Esqueceu Senha", email: `ls.${s}@t.dev`, matricula: `LS${s}`, curso: "CC" });
+r = await U.A2.c("POST", `/api/admin/usuarios/${U.LS.id}/link-senha`); check("link de senha: participante não pode gerar (403)", r.status === 403, r);
+r = await adm("POST", `/api/admin/usuarios/${U.LS.id}/link-senha`); check("admin gera link de nova senha", r.status === 201 && /\/redefinir-senha\?token=/.test(r.json?.link ?? ""), r);
+const tokenAntigo = new URL(r.json.link).searchParams.get("token");
+r = await adm("POST", `/api/admin/usuarios/${U.LS.id}/link-senha`); const tokenNovo = new URL(r.json.link).searchParams.get("token");
+r = await pub("POST", "/api/auth/redefinir-senha", { token: tokenAntigo, novaSenha: "Nova@Senha1" }); check("gerar outro link invalida o anterior", r.status === 400, r);
+r = await pub("POST", "/api/auth/redefinir-senha", { token: tokenNovo, novaSenha: "Nova@Senha1" }); check("pessoa define a nova senha pelo link", r.status === 200, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `LS${s}`, senha: "Nova@Senha1" }); check("entra com a nova senha pelo login único", r.status === 200, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { exibirEquipesPublicas: true, local: "IFPR Campus Pinhais — Bloco B" });
 r = await pub("GET", "/api/equipes");
 check("com a flag: equipes inscritas públicas, sem dados de pessoas",
@@ -439,14 +457,24 @@ r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, 
 r = await U.A3.c("GET", `/api/admin/projetos/${P1}/registros`); check("participante não vê a trilha: 403", r.status === 403, r);
 
 titulo("16. Páginas do planejamento (31 telas) e rotas antigas");
+// A Home só mostra vencedores com o resultado publicado: publica, confere e volta ao estado anterior.
+await adm("POST", "/api/admin/resultados/publicar", {});
+const vencedor = (await pub("GET", "/api/resultados")).json?.ranking?.[0];
 const home = await fetch(BASE + "/");
 const homeHtml = await home.text();
+await adm("POST", "/api/admin/resultados/publicar", { publicado: false });
 check("Home usa edição, desafio, agenda e resultado publicados", home.status === 200
   && homeHtml.includes(`HackIF Fluxo ${s}`)
   && homeHtml.includes("Desafio publicado")
   && homeHtml.includes("Abertura")
-  && homeHtml.includes("Projeto 1"), { status: home.status });
-const paginasPublicas = ["/", "/hackathon", "/desafios", "/agenda", "/resultados", "/regulamento", "/privacidade", "/login", "/login/aluno", "/login/servidor", "/login/externo", "/cadastro/aluno", "/cadastro/servidor", "/cadastro/externo", "/recuperar-senha", "/sobre"];
+  && Boolean(vencedor?.equipe?.nome) && homeHtml.includes(vencedor.equipe.nome), { status: home.status, vencedor });
+const paginasPublicas = ["/", "/hackathon", "/desafios", "/agenda", "/resultados", "/regulamento", "/faq", "/privacidade", "/login", "/cadastro/aluno", "/cadastro/servidor", "/cadastro/externo", "/recuperar-senha", "/sobre"];
+const loginsAntigos = [];
+for (const p of ["/login/aluno", "/login/servidor", "/login/externo?next=/admin"]) {
+  const res = await fetch(BASE + p, { redirect: "manual" });
+  if (res.status >= 300 && res.status < 400 && new URL(res.headers.get("location"), BASE).pathname === "/login") loginsAntigos.push(p);
+}
+check("endereços antigos de login levam ao login único", loginsAntigos.length === 3, loginsAntigos);
 const publicasOk = [];
 for (const p of paginasPublicas) if ((await fetch(BASE + p, { redirect: "manual" })).status === 200) publicasOk.push(p);
 check(`${paginasPublicas.length} páginas públicas respondem 200`, publicasOk.length === paginasPublicas.length, paginasPublicas.filter((p) => !publicasOk.includes(p)));
