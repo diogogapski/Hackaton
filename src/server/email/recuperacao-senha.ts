@@ -21,6 +21,9 @@ export function obterConfiguracaoEmail(env: AmbienteEmail = process.env): Config
   if (provedor !== "console" && provedor !== "resend") {
     throw new ErroConfiguracaoEmail("EMAIL_PROVIDER deve ser resend ou console");
   }
+  if (provedor === "console" && env.NODE_ENV === "production" && env.GITHUB_ACTIONS !== "true") {
+    throw new ErroConfiguracaoEmail("EMAIL_PROVIDER=console não é permitido em produção");
+  }
   if (!appUrl && provedor === "resend") {
     throw new ErroConfiguracaoEmail("APP_URL ou RAILWAY_PUBLIC_DOMAIN é obrigatório para enviar e-mails");
   }

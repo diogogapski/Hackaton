@@ -9,6 +9,16 @@ export type VinculoLogin = "ALUNO" | "SERVIDOR" | "EXTERNO";
 
 const destinoPorPapel = { ADMIN: "/admin", JURADO: "/jurado", PARTICIPANTE: "/dashboard" } as const;
 
+function destinoInterno(valor: string | null) {
+  if (!valor?.startsWith("/")) return null;
+  try {
+    const url = new URL(valor, window.location.origin);
+    return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : null;
+  } catch {
+    return null;
+  }
+}
+
 const rotulos: Record<VinculoLogin | "EMAIL", { campo: string; dica?: string }> = {
   ALUNO: { campo: "Matrícula ou e-mail" },
   SERVIDOR: { campo: "SIAPE ou e-mail" },
@@ -38,8 +48,8 @@ export function LoginForm({ vinculo }: { vinculo?: VinculoLogin }) {
         method: "POST",
         body: { identificador, senha, ...(!porEmail && vinculo && { vinculo }) },
       });
-      const next = new URLSearchParams(window.location.search).get("next");
-      router.push(next?.startsWith("/") ? next : destinoPorPapel[resposta.user.papel]);
+      const next = destinoInterno(new URLSearchParams(window.location.search).get("next"));
+      router.push(next ?? destinoPorPapel[resposta.user.papel]);
       router.refresh();
     } catch (err) {
       setErro(err);
