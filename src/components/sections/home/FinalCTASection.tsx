@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { YourTurn3D } from "../../three/YourTurn3D";
 export function FinalCTASection() {
   return (
     <section className="relative overflow-hidden border-t border-foreground/10 bg-background py-24 lg:py-32">
@@ -17,27 +19,14 @@ export function FinalCTASection() {
           </p>
           <Link
             href="/cadastro"
-            className="mt-10 inline-flex min-h-14 items-center bg-accent px-8 font-display text-[0.9rem] !text-[#050706] font-semibold uppercase text-background transition-colors hover:bg-foreground"
+            className="mt-10 inline-flex min-h-14 items-center gap-2 bg-accent px-8 font-display text-[0.9rem] !text-[#050706] font-semibold uppercase text-background transition-colors hover:bg-foreground"
           >
-            PARTICIPAR DO HACKIF ↗
+            PARTICIPAR DO HACKIF
+            <ArrowUpRight size={16} strokeWidth={1.8} aria-hidden="true" />
           </Link>
         </div>
 
-        <div className="relative min-h-[360px] border-l border-t border-accent/16 bg-foreground/[0.012] lg:min-h-[520px]">
-          {/* TODO: inserir IF 3D final */}
-          <div
-            className="absolute inset-0 opacity-40"
-            aria-hidden="true"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 50% 45%, rgba(182,255,0,0.12), transparent 36%), linear-gradient(rgba(182,255,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(182,255,0,0.025) 1px, transparent 1px)",
-              backgroundSize: "100% 100%, 64px 64px, 64px 64px",
-            }}
-          />
-          <div className="absolute bottom-6 left-6 font-display text-[0.72rem] uppercase tracking-[0.08em] text-foreground/35">
-            FINAL_SYMBOL // RESERVED_SPACE
-          </div>
-        </div>
+        <YourTurn3D />
       </div>
     </section>
   );

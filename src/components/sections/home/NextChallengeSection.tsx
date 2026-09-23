@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import type { DesafioHome } from "./types";
 
 export function NextChallengeSection({ desafio }: { desafio: DesafioHome | null }) {
@@ -38,7 +39,10 @@ export function NextChallengeSection({ desafio }: { desafio: DesafioHome | null 
             </div>
             <div className="mt-auto flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <p className="max-w-[460px] font-display text-[1rem] leading-7 text-foreground/62">{desafio?.responsavel ? `Proposto por ${desafio.responsavel}.` : desafio ? "Confira os detalhes e prepare sua solução." : "O próximo desafio está sendo preparado."}</p>
-              <Link href="/desafios" className="font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground">VER DESAFIOS ↗</Link>
+              <Link href="/desafios" className="inline-flex items-center gap-2 font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground">
+                VER DESAFIOS
+                <ArrowUpRight size={15} strokeWidth={1.8} aria-hidden="true" />
+              </Link>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import type { EdicaoHome } from "../home/types";
 
 const eventLabelPadrao = "// HACKATHON DE CIÊNCIA DA COMPUTAÇÃO";
@@ -51,21 +52,19 @@ export function HeroContent({ edicao }: { edicao: EdicaoHome | null }) {
           className="flex h-[52px] min-w-[225px] items-center justify-between bg-accent px-6 font-display text-[0.75rem] font-bold uppercase tracking-[0.02em] !text-[#050706] transition-colors duration-200 hover:bg-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           {chamada.label}
-          <span
-            className="ml-5 text-[0.78rem] !text-[#050706]"
+          <ArrowUpRight
+            size={14}
+            strokeWidth={1.8}
+            className="ml-5 shrink-0 !text-[#050706]"
             aria-hidden="true"
-          >
-            {"\u2197"}
-          </span>
+          />
         </Link>
         <Link
           href="/hackathon"
           className="flex h-[52px] min-w-[175px] items-center justify-between border border-accent/30 bg-transparent px-6 font-display text-[0.75rem] font-bold uppercase tracking-[0.02em] text-foreground/88 transition-colors duration-200 hover:border-accent/70 hover:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-accent"
         >
           SAIBA MAIS
-          <span className="ml-5 text-[0.78rem] text-accent" aria-hidden="true">
-            {"\u2197"}
-          </span>
+          <ArrowUpRight size={14} strokeWidth={1.8} className="ml-5 shrink-0 text-accent" aria-hidden="true" />
         </Link>
       </div>
 

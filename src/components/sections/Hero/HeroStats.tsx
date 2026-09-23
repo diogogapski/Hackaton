@@ -35,17 +35,17 @@ export function HeroStats({ edicao }: { edicao: EdicaoHome | null }) {
             key={stat.description}
             className="flex min-h-[132px] items-center gap-5 border-foreground/10 px-6 py-7 sm:px-8 sm:[&:nth-child(2n+1)]:border-r lg:border-l lg:[&:nth-child(2n+1)]:border-r-0 lg:first:border-l-0"
           >
-            <Icon
-              size={25}
-              strokeWidth={1.7}
-              className="shrink-0 text-accent"
-              aria-hidden="true"
-            />
-            <div>
+            <div className="grid grid-cols-[25px_minmax(0,1fr)] items-center gap-x-5">
+              <Icon
+                size={25}
+                strokeWidth={1.7}
+                className="shrink-0 text-accent"
+                aria-hidden="true"
+              />
               <p className="font-display text-[clamp(1.55rem,2vw,2.15rem)] font-semibold uppercase leading-[1.12] text-accent">
                 {stat.value}
               </p>
-              <p className="mt-3 max-w-[170px] font-mono text-[0.68rem] font-semibold uppercase leading-5 tracking-[0.1em] text-foreground/55">
+              <p className="col-start-2 mt-3 max-w-[170px] font-mono text-[0.68rem] font-semibold uppercase leading-5 tracking-[0.1em] text-foreground/55">
                 {stat.description}
               </p>
             </div>

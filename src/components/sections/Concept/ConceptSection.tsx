@@ -1,4 +1,8 @@
+"use client";
+
 import { ArrowDown, ChevronRight, Code2, Lightbulb, Rocket } from "lucide-react";
+import { useRef } from "react";
+import { ConceptProcess3D } from "../../three/ConceptProcess3D";
 
 const processSteps = [
   {
@@ -34,24 +38,28 @@ const pillars = [
 ] as const;
 
 function ConceptProcess() {
+  const stageAnchors = useRef<Array<HTMLDivElement | null>>([]);
+
   return (
     <div
-      className="min-w-0 py-10 lg:pr-10"
+      className="relative min-w-0 py-10 lg:pr-10"
     >
+      <ConceptProcess3D anchors={stageAnchors} />
       <div className="mb-6 font-display text-[0.72rem] font-semibold uppercase tracking-[0.08em]">
         <span className="text-accent">{"// "}</span>
         <span className="text-foreground/55">DA IDEIA À SOLUÇÃO REAL</span>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] lg:items-start lg:gap-3">
+      <div className="grid grid-cols-2 gap-6 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] lg:items-start lg:gap-3">
         {processSteps.map((step, index) => (
           <div key={step.title} className="contents">
             <div
               className="min-w-0"
             >
-              <div className="relative mb-4 h-[118px] w-full max-w-[138px]">
-                {/* TODO: inserir imagem 3D em {step.imageTodo} */}
-              </div>
+              <div
+                ref={(element) => { stageAnchors.current[index] = element; }}
+                className="relative mb-4 h-[118px] w-full max-w-[138px]"
+              />
               <h3 className="font-display text-[0.82rem] font-semibold uppercase leading-[1.15] text-accent">
                 {step.title}
               </h3>

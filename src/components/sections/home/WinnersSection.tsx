@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Medal, Trophy } from "lucide-react";
+import { ArrowUpRight, Medal, Trophy } from "lucide-react";
 import type { VencedorHome } from "./types";
 
 const secondaryPlaces = [
@@ -110,9 +110,10 @@ export function WinnersSection({ winners }: { winners: VencedorHome[] }) {
               <div className="mt-12 flex justify-end">
                 <Link
                   href="/resultados"
-                  className="font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground"
+                  className="inline-flex items-center gap-2 font-display text-[0.82rem] font-semibold uppercase text-accent transition-colors hover:text-foreground"
                 >
-                  VER RESULTADOS ↗
+                  VER RESULTADOS
+                  <ArrowUpRight size={15} strokeWidth={1.8} aria-hidden="true" />
                 </Link>
               </div>
             </div>
