@@ -3,6 +3,14 @@ import { z } from "zod";
 const texto = (max: number) => z.string().trim().min(1).max(max);
 const opcional = (max: number) => z.string().trim().max(max).nullable().optional();
 const data = z.coerce.date();
+const urlHttp = z.url().refine((valor) => {
+  try {
+    const protocolo = new URL(valor).protocol;
+    return protocolo === "https:" || protocolo === "http:";
+  } catch {
+    return false;
+  }
+}, "Use uma URL com http ou https");
 
 export const hackathonIdQuerySchema = z.object({ hackathonId: z.string().optional() });
 
@@ -29,7 +37,7 @@ const hackathonCampos = z.object({
   limiteEquipes: z.number().int().min(1).max(1000).nullable().optional(),
   comunicarMudancasAgenda: z.boolean().optional(),
   retencaoDadosDias: z.number().int().min(0).max(3650).nullable().optional(),
-  regulamentoUrl: z.url().nullable().optional(),
+  regulamentoUrl: urlHttp.nullable().optional(),
   regulamentoTexto: opcional(50000),
 });
 
@@ -111,8 +119,8 @@ const projetoCampos = z.object({
   solucao: opcional(10000),
   desafioId: z.string().nullable().optional(),
   tecnologias: z.array(z.string().trim().min(1).max(40)).max(30),
-  links: z.array(z.object({ tipo: texto(40), url: z.url() })).max(20),
-  arquivos: z.array(z.object({ nome: texto(160), url: z.url() })).max(20),
+  links: z.array(z.object({ tipo: texto(40), url: urlHttp })).max(20),
+  arquivos: z.array(z.object({ nome: texto(160), url: urlHttp })).max(20),
   /** true = envia para avaliação (situação ENVIADO). */
   enviar: z.boolean().optional(),
 });

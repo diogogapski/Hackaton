@@ -2,11 +2,18 @@ import Link from "next/link";
 
 const navegacao = [
   { label: "Sobre", href: "/sobre" },
+  { label: "O Hackathon", href: "/hackathon" },
   { label: "Desafios", href: "/desafios" },
   { label: "Agenda", href: "/agenda" },
+  { label: "Resultados", href: "/resultados" },
   { label: "Como participar", href: "/#participar" },
+  { label: "Inscreva-se", href: "/cadastro" },
   { label: "Regulamento", href: "/regulamento" },
   { label: "FAQ", href: "/faq" },
+  { label: "Entrar", href: "/login" },
+  { label: "Área do jurado", href: "/login?next=/jurado" },
+  { label: "Área administrativa", href: "/login?next=/admin" },
+  { label: "Esqueci minha senha", href: "/recuperar-senha" },
 ] as const;
 
 function InstagramIcon() {
@@ -73,7 +80,6 @@ export function Footer() {
 
         <div className="grid gap-4 font-display text-[0.76rem] uppercase tracking-[0.05em] text-foreground/42 lg:grid-cols-[minmax(250px,0.68fr)_minmax(600px,1.32fr)] lg:items-center">
           <p>© 2026 HACKIF · IFPR — Campus Pinhais</p>
-
           <div className="flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">
             <a
               href="https://www.instagram.com/ifprpinhaisoficial/"

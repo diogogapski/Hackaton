@@ -1,8 +1,8 @@
 import { prisma } from "@/src/lib/db";
 import { conflict } from "@/src/lib/http";
 import { hashPassword } from "@/src/lib/auth/password";
-import { createSession } from "@/src/lib/auth/session";
 import { publicUserSelect } from "@/src/lib/auth";
+import { configuracaoEmailObrigatoria, emitirVerificacao } from "@/src/server/identidade/verificacao-email";
 import type { Vinculo } from "@/src/generated/prisma/enums";
 
 type NovoUsuario = {
@@ -16,8 +16,9 @@ type NovoUsuario = {
   curso?: string;
 };
 
-/** Cria a conta (sempre PARTICIPANTE), registra aceite dos termos e inicia a sessão. */
+/** Cria a conta (sempre PARTICIPANTE) e envia a confirmação de e-mail antes de permitir login. */
 export async function registrarUsuario(input: NovoUsuario) {
+  const configuracaoEmail = configuracaoEmailObrigatoria();
   const { senha } = input;
   // Lista explícita: nada além destes campos chega ao banco (ex.: papel, aceiteTermos).
   const dados = {
@@ -53,6 +54,11 @@ export async function registrarUsuario(input: NovoUsuario) {
     select: publicUserSelect,
   });
 
-  await createSession(user.id);
+  try {
+    await emitirVerificacao(user, user.email, configuracaoEmail);
+  } catch (error) {
+    await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    throw error;
+  }
   return user;
 }

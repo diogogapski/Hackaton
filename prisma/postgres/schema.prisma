@@ -67,6 +67,7 @@ model User {
   id                 String          @id @default(uuid())
   nome               String
   email              String          @unique
+  emailVerificadoEm  DateTime?
   senhaHash          String
   vinculo            Vinculo
   matricula          String?         @unique
@@ -83,9 +84,10 @@ model User {
   criadoEm           DateTime        @default(now())
   atualizadoEm       DateTime        @updatedAt
 
-  passwordResets   PasswordReset[]
-  equipesLideradas Team[]          @relation("LiderEquipe")
-  participacoes    TeamMember[]
+  passwordResets    PasswordReset[]
+  verificacoesEmail EmailVerification[]
+  equipesLideradas  Team[]              @relation("LiderEquipe")
+  participacoes     TeamMember[]
 
   // Bloco B (somente relações; jurado é User com papel JURADO)
   atribuicoes        AvaliacaoAtribuicao[]
@@ -108,6 +110,21 @@ model PasswordReset {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model EmailVerification {
+  id        String    @id @default(uuid())
+  userId    String
+  email     String
+  tokenHash String    @unique
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usadoEm])
+  @@index([email, usadoEm])
 }
 
 model Team {
@@ -150,6 +167,8 @@ model TeamMember {
   userId   String
   entrouEm DateTime  @default(now())
   saiuEm   DateTime?
+  // Preenchida só na participação ativa: uma pessoa não entra em duas equipes da mesma edição.
+  ativoKey String?   @unique
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)

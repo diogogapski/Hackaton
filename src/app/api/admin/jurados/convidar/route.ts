@@ -39,6 +39,7 @@ export const POST = route(async (request) => {
       email,
       vinculo,
       papel: "JURADO",
+      emailVerificadoEm: new Date(),
       senhaHash: await hashPassword(randomBytes(32).toString("base64url")),
       passwordResets: { create: { tokenHash, expiraEm: new Date(Date.now() + VALIDADE_DIAS * 864e5) } },
     },

@@ -7,8 +7,8 @@
  *   DATABASE_URL="file:./prisma/fluxo.db" npm run dev > servidor.log
  *   ADMIN_EMAIL=admin@teste.dev ADMIN_SENHA=Admin@2026! LOG=servidor.log npm run test:fluxo
  *
- * Variáveis: BASE (padrão http://localhost:3000), ADMIN_EMAIL, ADMIN_SENHA e LOG (opcional: log do
- * `next dev`, usado para ler o link de redefinição de senha; sem ele essa parte é pulada).
+ * Variáveis: BASE (padrão http://localhost:3000), ADMIN_EMAIL, ADMIN_SENHA e LOG (log do servidor,
+ * usado para confirmar os e-mails de teste e validar a recuperação de senha).
  */
 import { existsSync, readFileSync } from "node:fs";
 
@@ -17,6 +17,10 @@ const LOG = process.env.LOG;
 const ADMIN = { email: process.env.ADMIN_EMAIL, senha: process.env.ADMIN_SENHA };
 if (!ADMIN.email || !ADMIN.senha) {
   console.error("Defina ADMIN_EMAIL e ADMIN_SENHA (admin criado com npm run admin:create).");
+  process.exit(1);
+}
+if (!LOG) {
+  console.error("Defina LOG com o arquivo de saída do servidor para testar os fluxos de e-mail.");
   process.exit(1);
 }
 
@@ -61,6 +65,19 @@ const s = Date.now().toString().slice(-6);
 const dias = (n) => new Date(Date.now() + n * 864e5).toISOString();
 const pub = cliente("publico");
 let r;
+
+const escaparRegex = (valor) => valor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+async function aguardarToken(marcador, email) {
+  const regex = new RegExp(`\\[${escaparRegex(marcador)}\\] ${escaparRegex(email)}: \\S+token=([^\\s]+)`, "g");
+  for (let i = 0; i < 30; i++) {
+    if (existsSync(LOG)) {
+      const tokens = [...readFileSync(LOG, "utf8").matchAll(regex)];
+      if (tokens.length) return decodeURIComponent(tokens.at(-1)[1]);
+    }
+    await new Promise((ok) => setTimeout(ok, 100));
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------- 1
 titulo("1. Banco vazio e admin inicial (admin:create)");
@@ -144,12 +161,17 @@ async function registrar(chave, tipo, corpo) {
   const c = cliente(chave);
   const res = await c("POST", `/api/auth/register/${tipo}`, { senha: "Senha@123", aceiteTermos: true, ...corpo });
   U[chave] = { c, id: res.json?.user?.id, ...corpo };
+  if (res.status === 201) {
+    const token = await aguardarToken("verificar-email", corpo.email.toLowerCase());
+    res.confirmacao = token ? await c("POST", "/api/auth/verificar-email", { token }) : null;
+    res.login = await c("POST", "/api/auth/login", { identificador: corpo.email, senha: "Senha@123" });
+  }
   return res;
 }
 for (let i = 1; i <= 8; i++) {
   r = await registrar(`A${i}`, "aluno", { nome: `Aluno ${i}`, email: `a${i}.${s}@t.dev`, matricula: `M${i}${s}`, curso: "CC" });
 }
-check("8 alunos cadastrados, papel PARTICIPANTE, termos registrados", r.status === 201 && r.json.user.papel === "PARTICIPANTE" && r.json.user.termosAceitosEm, r);
+check("8 alunos cadastrados e e-mails confirmados", r.status === 201 && r.json.user.papel === "PARTICIPANTE" && r.confirmacao?.status === 200 && r.login?.status === 200, r);
 r = await registrar("S1", "servidor", { nome: "Servidor 1", email: `s1.${s}@ifpr.edu.br`, siape: `S${s}` }); check("servidor cadastrado", r.status === 201 && r.json.user.vinculo === "SERVIDOR", r);
 const cpf = "52998224725";
 r = await registrar("E1", "externo", { nome: "Externo 1", email: `e1.${s}@t.dev`, vinculo: "EXTERNO", cpf: "529.982.247-25" }); check("externo com CPF (normalizado)", r.status === 201, r);
@@ -162,11 +184,16 @@ r = await cliente()("POST", "/api/auth/register/aluno", { nome: "Sem termos", em
 r = await cliente()("POST", "/api/auth/register/aluno", { nome: "Curta", email: `sc.${s}@t.dev`, matricula: `C${s}`, curso: "CC", senha: "123", aceiteTermos: true }); check("senha curta: 400", r.status === 400, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, vinculo: "ALUNO", senha: "Senha@123" }); check("login por matrícula + vínculo", r.status === 200, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `S${s}`, vinculo: "SERVIDOR", senha: "Senha@123" }); check("login por SIAPE + vínculo", r.status === 200, r);
-r = await cliente()("POST", "/api/auth/register/externo", { nome: "Egresso com CPF", email: `egcpf.${s}@t.dev`, vinculo: "EGRESSO", cpf: "111.444.777-35", senha: "Senha@123", aceiteTermos: true });
+r = await registrar("EGCPF", "externo", { nome: "Egresso com CPF", email: `egcpf.${s}@t.dev`, vinculo: "EGRESSO", cpf: "111.444.777-35" });
 r = await cliente()("POST", "/api/auth/login", { identificador: "11144477735", vinculo: "EXTERNO", senha: "Senha@123" });
-check("egresso entra pelo acesso externo com CPF (/login/externo)", r.status === 200 && r.json.user.vinculo === "EGRESSO", r);
+check("egresso entra com CPF", r.status === 200 && r.json.user.vinculo === "EGRESSO", r);
 r = await cliente()("POST", "/api/auth/login", { identificador: "529.982.247-25", vinculo: "EXTERNO", senha: "Senha@123" }); check("login por CPF + vínculo", r.status === 200, r);
-r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, senha: "Senha@123" }); check("matrícula sem vínculo: 401", r.status === 401, r);
+// Login único: o mesmo campo aceita matrícula, SIAPE ou CPF, sem escolher o vínculo.
+r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, senha: "Senha@123" }); check("login único: matrícula sem vínculo", r.status === 200 && r.json.user.email === `a2.${s}@t.dev`, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `S${s}`, senha: "Senha@123" }); check("login único: SIAPE sem vínculo", r.status === 200 && r.json.user.vinculo === "SERVIDOR", r);
+r = await cliente()("POST", "/api/auth/login", { identificador: "529.982.247-25", senha: "Senha@123" }); check("login único: CPF sem vínculo", r.status === 200 && r.json.user.vinculo === "EXTERNO", r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `M2${s}`, senha: "errada" }); check("login único: senha errada 401", r.status === 401, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `NAOEXISTE${s}`, senha: "Senha@123" }); check("login único: identificador inexistente 401", r.status === 401, r);
 r = await cliente()("POST", "/api/auth/login", { identificador: `a2.${s}@t.dev`, senha: "errada" }); check("senha errada: 401", r.status === 401, r);
 
 // ---------------------------------------------------------------- 5
@@ -176,7 +203,16 @@ r = await U.A1.c("PUT", "/api/perfil", { nome: "Aluno Um", telefone: "41 99999-0
 r = await U.A1.c("PUT", "/api/perfil", { matricula: "OUTRA" }); check("matrícula bloqueada: 400", r.status === 400, r);
 r = await U.E1.c("PUT", "/api/perfil", { cpf: "00000000000" }); check("CPF bloqueado: 400", r.status === 400, r);
 r = await U.A1.c("PUT", "/api/perfil", { papel: "ADMIN" }); check("papel não editável pelo usuário: 400", r.status === 400, r);
-r = await U.A1.c("PUT", "/api/perfil", { email: U.A2.email }); check("e-mail em uso: 409", r.status === 409, r);
+r = await U.A1.c("PUT", "/api/perfil", { email: U.A2.email }); check("e-mail não muda pela rota geral: 400", r.status === 400, r);
+r = await U.A1.c("POST", "/api/perfil/email", { novoEmail: U.A2.email, senhaAtual: "Senha@123" }); check("novo e-mail em uso: 409", r.status === 409, r);
+r = await U.A1.c("POST", "/api/perfil/email", { novoEmail: `novo.a1.${s}@t.dev`, senhaAtual: "errada" }); check("troca de e-mail exige a senha atual", r.status === 400, r);
+const novoEmailE2 = `novo.e2.${s}@t.dev`;
+r = await U.E2.c("POST", "/api/perfil/email", { novoEmail: novoEmailE2, senhaAtual: "Senha@123" }); check("solicita troca de e-mail", r.status === 200, r);
+const tokenEmailE2 = await aguardarToken("verificar-email", novoEmailE2);
+r = await pub("POST", "/api/auth/verificar-email", { token: tokenEmailE2 }); check("confirma o novo e-mail", r.status === 200 && r.json.email === novoEmailE2, r);
+r = await U.E2.c("GET", "/api/perfil"); check("troca de e-mail encerra sessões antigas", r.status === 401, r);
+U.E2.email = novoEmailE2;
+r = await U.E2.c("POST", "/api/auth/login", { identificador: novoEmailE2, senha: "Senha@123" }); check("entra com o novo e-mail", r.status === 200, r);
 r = await U.A1.c("PUT", "/api/perfil/senha", { senhaAtual: "errada", novaSenha: "Nova@12345" }); check("troca de senha exige a atual", r.status === 400, r);
 const outroDispositivo = cliente("A1-outro");
 await outroDispositivo("POST", "/api/auth/login", { identificador: U.A1.email, senha: "Senha@123" });
@@ -191,19 +227,18 @@ titulo("6. Recuperação de senha (doc 01 §2)");
 r = await pub("POST", "/api/auth/recuperar-senha", { email: `naoexiste.${s}@t.dev` }); check("e-mail inexistente: resposta genérica 200", r.status === 200, r);
 r = await U.A8.c("POST", "/api/auth/recuperar-senha", { email: U.A8.email }); check("solicita recuperação", r.status === 200, r);
 await new Promise((ok) => setTimeout(ok, 700));
-const link = LOG && existsSync(LOG) && [...readFileSync(LOG, "utf8").matchAll(new RegExp(`${U.A8.email.replace(/\./g, "\\.")}: \\S+token=(\\S+)`, "g"))].pop();
-if (!LOG) console.log("  --    redefinição pelo link pulada (defina LOG com o log do next dev)");
-else check("token gerado (link no console em dev)", Boolean(link), "sem link no log");
-if (link) {
-  r = await pub("POST", "/api/auth/redefinir-senha", { token: link[1], novaSenha: "Recuperada@1" }); check("redefine senha com token", r.status === 200, r);
-  r = await pub("POST", "/api/auth/redefinir-senha", { token: link[1], novaSenha: "Outra@12345" }); check("token não reutilizável: 400", r.status === 400, r);
+const tokenRecuperacao = await aguardarToken("recuperar-senha", U.A8.email);
+check("token gerado (link no console em teste)", Boolean(tokenRecuperacao), "sem link no log");
+if (tokenRecuperacao) {
+  r = await pub("POST", "/api/auth/redefinir-senha", { token: tokenRecuperacao, novaSenha: "Recuperada@1" }); check("redefine senha com token", r.status === 200, r);
+  r = await pub("POST", "/api/auth/redefinir-senha", { token: tokenRecuperacao, novaSenha: "Outra@12345" }); check("token não reutilizável: 400", r.status === 400, r);
   r = await cliente()("POST", "/api/auth/login", { identificador: U.A8.email, senha: "Recuperada@1" }); check("login com senha redefinida", r.status === 200, r);
   r = await U.A8.c("GET", "/api/perfil"); check("redefinição derruba sessões abertas", r.status === 401, r);
 
   await U.A8.c("POST", "/api/auth/recuperar-senha", { email: U.A8.email });
   await new Promise((ok) => setTimeout(ok, 700));
-  const novo = [...readFileSync(LOG, "utf8").matchAll(new RegExp(`${U.A8.email.replace(/\./g, "\\.")}: \\S+token=(\\S+)`, "g"))].pop();
-  const simultaneos = await Promise.all([1, 2].map(() => pub("POST", "/api/auth/redefinir-senha", { token: novo[1], novaSenha: "Recuperada@1" })));
+  const novo = await aguardarToken("recuperar-senha", U.A8.email);
+  const simultaneos = await Promise.all([1, 2].map(() => pub("POST", "/api/auth/redefinir-senha", { token: novo, novaSenha: "Recuperada@1" })));
   check("mesmo token usado ao mesmo tempo: só uma requisição vence", simultaneos.map((x) => x.status).sort().join() === "200,400", simultaneos.map((x) => x.status));
   await new Promise((ok) => setTimeout(ok, 1100));
   r = await U.A8.c("POST", "/api/auth/login", { identificador: U.A8.email, senha: "Recuperada@1" }); check("login após nova redefinição", r.status === 200, r);
@@ -242,9 +277,8 @@ await U.A6.c("POST", "/api/equipe/entrar", { codigo: cod2 });
 r = await U.S1.c("POST", "/api/equipe/entrar", { codigo: cod2 }); check("T2 com aluno + servidor INSCRITA (2ª vaga)", r.json?.equipe?.situacao === "INSCRITA", r);
 const X = [];
 for (let i = 1; i <= 3; i++) {
-  const c = cliente(`X${i}`);
-  r = await c("POST", "/api/auth/register/aluno", { nome: `Espera ${i}`, email: `x${i}.${s}@t.dev`, matricula: `X${i}${s}`, curso: "CC", senha: "Senha@123", aceiteTermos: true });
-  X.push({ c, id: r.json.user.id });
+  r = await registrar(`X${i}`, "aluno", { nome: `Espera ${i}`, email: `x${i}.${s}@t.dev`, matricula: `X${i}${s}`, curso: "CC" });
+  X.push({ c: U[`X${i}`].c, id: r.json.user.id });
 }
 r = await X[0].c("POST", "/api/equipe", { nome: `T4 ${s}` }); const T4 = r.json.equipe.id; const cod4 = r.json.equipe.codigoConvite;
 await X[1].c("POST", "/api/equipe/entrar", { codigo: cod4 });
@@ -366,6 +400,19 @@ check("dashboard: inscrições, equipes, participantes, projetos, jurados, pende
   && r.json.comunicadosRecentes?.some((c) => c.titulo === "Rascunho" && !c.publicadoEm), r.json);
 r = await adm("GET", "/api/admin/usuarios?papel=JURADO"); check("filtro por papel", r.json?.total === 3, r);
 r = await pub("GET", "/api/equipes"); check("lista pública de equipes desligada por padrão", r.json?.publico === false && r.json.equipes.length === 0, r);
+check("andamento público em números mesmo sem a lista (sem dados de pessoas)",
+  r.json?.resumo?.equipesInscritas >= 1 && typeof r.json.resumo.projetosEnviados === "number" && typeof r.json.resumo.equipesEmEspera === "number"
+  && r.json.resumo.resultadosPublicados === false && !JSON.stringify(r.json).includes("@"), r.json);
+
+// Link de nova senha gerado pela organização (quando o envio de e-mail não está ativo).
+await registrar("LS", "aluno", { nome: "Esqueceu Senha", email: `ls.${s}@t.dev`, matricula: `LS${s}`, curso: "CC" });
+r = await U.A2.c("POST", `/api/admin/usuarios/${U.LS.id}/link-senha`); check("link de senha: participante não pode gerar (403)", r.status === 403, r);
+r = await adm("POST", `/api/admin/usuarios/${U.LS.id}/link-senha`); check("admin gera link de nova senha", r.status === 201 && /\/redefinir-senha\?token=/.test(r.json?.link ?? ""), r);
+const tokenAntigo = new URL(r.json.link).searchParams.get("token");
+r = await adm("POST", `/api/admin/usuarios/${U.LS.id}/link-senha`); const tokenNovo = new URL(r.json.link).searchParams.get("token");
+r = await pub("POST", "/api/auth/redefinir-senha", { token: tokenAntigo, novaSenha: "Nova@Senha1" }); check("gerar outro link invalida o anterior", r.status === 400, r);
+r = await pub("POST", "/api/auth/redefinir-senha", { token: tokenNovo, novaSenha: "Nova@Senha1" }); check("pessoa define a nova senha pelo link", r.status === 200, r);
+r = await cliente()("POST", "/api/auth/login", { identificador: `LS${s}`, senha: "Nova@Senha1" }); check("entra com a nova senha pelo login único", r.status === 200, r);
 await adm("PUT", `/api/admin/hackathons/${H}`, { exibirEquipesPublicas: true, local: "IFPR Campus Pinhais — Bloco B" });
 r = await pub("GET", "/api/equipes");
 check("com a flag: equipes inscritas públicas, sem dados de pessoas",
@@ -439,14 +486,24 @@ r = await adm("POST", "/api/admin/avaliacoes/corrigir", { ...correcao, nota: 8, 
 r = await U.A3.c("GET", `/api/admin/projetos/${P1}/registros`); check("participante não vê a trilha: 403", r.status === 403, r);
 
 titulo("16. Páginas do planejamento (31 telas) e rotas antigas");
+// A Home só mostra vencedores com o resultado publicado: publica, confere e volta ao estado anterior.
+await adm("POST", "/api/admin/resultados/publicar", { publicado: true });
+const vencedor = (await pub("GET", "/api/resultados")).json?.ranking?.[0];
 const home = await fetch(BASE + "/");
 const homeHtml = await home.text();
 check("Home usa edição, desafio, agenda e resultado publicados", home.status === 200
   && homeHtml.includes(`HackIF Fluxo ${s}`)
   && homeHtml.includes("Desafio publicado")
   && homeHtml.includes("Abertura")
-  && homeHtml.includes("Projeto 1"), { status: home.status });
-const paginasPublicas = ["/", "/hackathon", "/desafios", "/agenda", "/resultados", "/regulamento", "/privacidade", "/login", "/login/aluno", "/login/servidor", "/login/externo", "/cadastro/aluno", "/cadastro/servidor", "/cadastro/externo", "/recuperar-senha", "/sobre"];
+  && Boolean(vencedor?.equipe?.nome) && homeHtml.includes(vencedor.equipe.nome), { status: home.status, vencedor });
+await adm("POST", "/api/admin/resultados/publicar", { publicado: false });
+const paginasPublicas = ["/", "/hackathon", "/desafios", "/agenda", "/resultados", "/regulamento", "/faq", "/privacidade", "/login", "/cadastro/aluno", "/cadastro/servidor", "/cadastro/externo", "/recuperar-senha", "/sobre"];
+const loginsAntigos = [];
+for (const p of ["/login/aluno", "/login/servidor", "/login/externo?next=/admin"]) {
+  const res = await fetch(BASE + p, { redirect: "manual" });
+  if (res.status >= 300 && res.status < 400 && new URL(res.headers.get("location"), BASE).pathname === "/login") loginsAntigos.push(p);
+}
+check("endereços antigos de login levam ao login único", loginsAntigos.length === 3, loginsAntigos);
 const publicasOk = [];
 for (const p of paginasPublicas) if ((await fetch(BASE + p, { redirect: "manual" })).status === 200) publicasOk.push(p);
 check(`${paginasPublicas.length} páginas públicas respondem 200`, publicasOk.length === paginasPublicas.length, paginasPublicas.filter((p) => !publicasOk.includes(p)));

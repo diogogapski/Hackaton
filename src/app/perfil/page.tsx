@@ -33,6 +33,7 @@ export default function PerfilPage() {
   const { data, loading, error, reload } = useApi<{ user: Perfil }>("/api/perfil");
   const [form, setForm] = useState({ nome: "", email: "", telefone: "" });
   const [senhas, setSenhas] = useState({ senhaAtual: "", novaSenha: "", confirmar: "" });
+  const [senhaEmail, setSenhaEmail] = useState("");
   const [rPerfil, setRPerfil] = useState<Resultado>(null);
   const [rSenha, setRSenha] = useState<Resultado>(null);
   const [senhaExclusao, setSenhaExclusao] = useState("");
@@ -46,10 +47,19 @@ export default function PerfilPage() {
 
   async function salvarPerfil(e: React.FormEvent) {
     e.preventDefault();
+    if (!data) return;
     setRPerfil(null);
     try {
-      await api("/api/perfil", { method: "PUT", body: { nome: form.nome, email: form.email, telefone: form.telefone || null } });
-      setRPerfil({ ok: "Perfil atualizado" });
+      const mudouEmail = form.email.trim().toLowerCase() !== data.user.email;
+      if (mudouEmail) {
+        await api("/api/perfil/email", {
+          method: "POST",
+          body: { novoEmail: form.email, senhaAtual: senhaEmail },
+        });
+      }
+      await api("/api/perfil", { method: "PUT", body: { nome: form.nome, telefone: form.telefone || null } });
+      setSenhaEmail("");
+      setRPerfil({ ok: mudouEmail ? "Perfil salvo. Confirme o novo e-mail pelo link enviado." : "Perfil atualizado" });
       reload();
       router.refresh();
     } catch (err) {
@@ -97,8 +107,15 @@ export default function PerfilPage() {
         <Panel title="Perfil">
           <form onSubmit={salvarPerfil} className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2"><Field label="Nome"><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field></div>
-            <Field label="E-mail"><Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+            <Field label="E-mail" hint="Alterações são confirmadas por e-mail"><Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
             <Field label="Telefone"><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></Field>
+            {form.email.trim().toLowerCase() !== u.email ? (
+              <div className="md:col-span-2">
+                <Field label="Senha atual" hint="Obrigatória para trocar o e-mail">
+                  <Input required type="password" autoComplete="current-password" value={senhaEmail} onChange={(e) => setSenhaEmail(e.target.value)} />
+                </Field>
+              </div>
+            ) : null}
             <dl className="grid grid-cols-2 gap-3 border-t border-foreground/10 pt-4 text-[0.85rem] md:col-span-2">
               {[
                 ["Vínculo", u.vinculo],

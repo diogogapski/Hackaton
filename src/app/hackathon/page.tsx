@@ -40,9 +40,14 @@ function Secao({ id, tag, titulo, children }: { id: string; tag: string; titulo:
 export default function HackathonPage() {
   const h = useApi<{ hackathon: Hackathon }>("/api/hackathon/atual");
   const desafios = useApi<{ desafios: { id: string; titulo: string; descricao: string; categoria: string | null }[] }>("/api/desafios");
-  const agenda = useApi<{ agenda: { id: string; titulo: string; horarioInicio: string; horarioFim: string | null; local: string | null }[] }>("/api/agenda");
+  const agenda = useApi<{ agenda: { id: string; titulo: string; horarioInicio: string; horarioFim: string | null; local: string | null; cancelado: boolean }[] }>("/api/agenda");
   const comunicados = useApi<{ comunicados: { id: string; titulo: string; conteudo: string; publicadoEm: string }[] }>("/api/comunicados");
-  const equipes = useApi<{ publico: boolean; equipes: { id: string; nome: string; integrantes: number; desafio: string | null; projetoEnviado: boolean }[] }>("/api/equipes");
+  const equipes = useApi<{
+    publico: boolean;
+    resumo?: { equipesInscritas: number; limiteEquipes: number | null; equipesEmEspera: number; projetosEnviados: number; resultadosPublicados: boolean };
+    equipes: { id: string; nome: string; integrantes: number; desafio: string | null; projetoEnviado: boolean }[];
+  }>("/api/equipes");
+  const resumo = equipes.data?.resumo;
   const hackathon = h.data?.hackathon;
 
   return (
@@ -85,6 +90,28 @@ export default function HackathonPage() {
               </dl>
             </section>
 
+            {resumo ? (
+              <Secao id="andamento" tag="andamento" titulo="Andamento do evento">
+                <div className="grid gap-px border border-foreground/10 bg-foreground/10 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    ["Equipes inscritas", resumo.limiteEquipes ? `${resumo.equipesInscritas} / ${resumo.limiteEquipes}` : String(resumo.equipesInscritas), resumo.limiteEquipes ? "vagas preenchidas" : "equipes completas"],
+                    ["Lista de espera", String(resumo.equipesEmEspera), resumo.equipesEmEspera ? "aguardando vaga" : "nenhuma equipe"],
+                    ["Projetos enviados", String(resumo.projetosEnviados), hackathon.submissaoAberta ? "envio aberto" : "envio fechado"],
+                    ["Resultado", resumo.resultadosPublicados ? "Publicado" : "Em breve", resumo.resultadosPublicados ? "veja o ranking" : "após as avaliações"],
+                  ].map(([rotulo, valor, sub]) => (
+                    <div key={rotulo} className="bg-background p-5">
+                      <p className="font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted">{rotulo}</p>
+                      <p className="mt-2 font-display text-[2rem] font-semibold leading-none">{valor}</p>
+                      <p className="mt-2 text-[0.8rem] text-muted">{sub}</p>
+                    </div>
+                  ))}
+                </div>
+                {resumo.resultadosPublicados ? (
+                  <Link href="/resultados" className="mt-5 inline-flex font-mono text-[0.8rem] uppercase text-accent hover:text-foreground">Ver resultado ↗</Link>
+                ) : null}
+              </Secao>
+            ) : null}
+
             <Secao id="desafios" tag="desafios" titulo="Desafios">
               {desafios.data?.desafios.length === 0 ? <Empty>Desafios ainda não publicados</Empty> : null}
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -105,9 +132,12 @@ export default function HackathonPage() {
               {agenda.data?.agenda.length === 0 ? <Empty>Agenda em breve</Empty> : null}
               <ol className="grid gap-px border border-foreground/10 bg-foreground/10">
                 {agenda.data?.agenda.map((a) => (
-                  <li key={a.id} className="grid gap-2 bg-background p-4 md:grid-cols-[240px_1fr_200px]">
+                  <li key={a.id} className={`grid gap-2 bg-background p-4 md:grid-cols-[240px_1fr_200px] ${a.cancelado ? "opacity-60" : ""}`}>
                     <span className="font-mono text-[0.85rem] text-accent">{formatarData(a.horarioInicio)}</span>
-                    <span className="font-semibold">{a.titulo}</span>
+                    <span>
+                      <span className={`font-semibold ${a.cancelado ? "line-through" : ""}`}>{a.titulo}</span>
+                      {a.cancelado ? <span className="ml-2"><Badge tone="erro">cancelado</Badge></span> : null}
+                    </span>
                     <span className="text-[0.85rem] text-muted md:text-right">{a.local ?? ""}</span>
                   </li>
                 ))}

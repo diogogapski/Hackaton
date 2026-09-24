@@ -1,7 +1,7 @@
 import { prisma } from "@/src/lib/db";
-import { HttpError, parseBody, route } from "@/src/lib/http";
+import { parseBody, route } from "@/src/lib/http";
 import { createToken } from "@/src/lib/auth/password";
-import { clientIp, exigirDentroDoLimite, registrarTentativa } from "@/src/lib/auth/rate-limit";
+import { clientIp, exigirDentroDoLimite, rateLimitKey, registrarTentativa } from "@/src/lib/auth/rate-limit";
 import { recuperarSenhaSchema } from "@/src/server/identidade/schemas";
 import {
   ErroConfiguracaoEmail,
@@ -19,19 +19,31 @@ export const POST = route(async (request) => {
     configuracao = obterConfiguracaoEmail();
   } catch (error) {
     if (error instanceof ErroConfiguracaoEmail) {
-      console.error(`[recuperar-senha] configuração inválida: ${error.message}`);
-      throw new HttpError(503, "Recuperação de senha temporariamente indisponível");
+      // Sem envio de e-mail configurado, a organização gera o link em /admin/usuarios.
+      // A resposta é igual para qualquer e-mail (não revela contas cadastradas).
+      console.warn(`[recuperar-senha] envio de e-mail desativado: ${error.message}`);
+      return Response.json({ ok: true, envio: "organizacao" });
     }
     throw error;
   }
 
   const ip = clientIp(request);
-  await exigirDentroDoLimite("recuperar-senha", ip);
-  await registrarTentativa("recuperar-senha", ip);
+  const conta = rateLimitKey(email);
+  await Promise.all([
+    exigirDentroDoLimite("recuperar-senha", ip),
+    exigirDentroDoLimite("recuperar-senha-conta", conta),
+  ]);
+  await Promise.all([
+    registrarTentativa("recuperar-senha", ip),
+    registrarTentativa("recuperar-senha-conta", conta),
+  ]);
 
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, nome: true, email: true, situacao: true } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, nome: true, email: true, situacao: true, emailVerificadoEm: true },
+  });
 
-  if (user && user.situacao === "ATIVO") {
+  if (user && user.situacao === "ATIVO" && user.emailVerificadoEm) {
     const { token, tokenHash } = createToken();
     await prisma.$transaction([
       prisma.passwordReset.updateMany({

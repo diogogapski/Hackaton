@@ -26,8 +26,8 @@ Scripts: `db:migrate`, `db:deploy`, `db:generate`, `db:seed`, `db:reset`, `db:st
 
 | Comando | Cobre |
 |---|---|
-| `npm test` | ranking (média ponderada, desempates, empates) e checagem de origem contra CSRF |
-| `npm run test:fluxo` | fluxo inteiro sobre banco vazio (~170 verificações): edição, conteúdo, cadastro, login, perfil, recuperação de senha, equipes, submissão, jurados, avaliação, apuração, publicação, Home, admin, prazos, sessão, CSRF e exclusão de conta; também falha se alguma resposta expuser hash ou senha |
+| `npm test` | regras puras e controles de segurança, incluindo ranking, origem contra CSRF, rate limit e e-mails |
+| `npm run test:fluxo` | fluxo inteiro sobre banco vazio: edição, conteúdo, cadastro com confirmação de e-mail, login, perfil, recuperação de senha, equipes, submissão, jurados, avaliação, apuração, publicação, Home, admin, prazos, sessão, CSRF e exclusão de conta; também falha se alguma resposta expuser hash ou senha |
 
 O GitHub Actions (`.github/workflows/ci.yml`) roda a cada push dois jobs: SQLite (lint, testes, build e `test:fluxo`) e PostgreSQL 16 real (build antes das migrations, como na Railway, depois migrations e `test:fluxo`).
 Para rodar o fluxo localmente, veja as instruções no topo de `scripts/teste-fluxo.mjs`.
@@ -85,9 +85,9 @@ Erros saem como `{ error, details? }` com status 400/401/403/404/409/429/500.
 **Auth (Dev 1):** `POST /api/auth/register/{aluno|servidor|externo}` (exige `aceiteTermos: true`),
 `POST /api/auth/login` (`identificador` = e-mail, ou matrícula/SIAPE/CPF + `vinculo`),
 `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/recuperar-senha` (Resend em produção; console em desenvolvimento),
-`POST /api/auth/redefinir-senha`.
+`POST /api/auth/redefinir-senha`, `POST /api/auth/verificar-email` e `POST /api/auth/reenviar-verificacao`.
 
-**Perfil:** `GET|PUT /api/perfil` (só nome, e-mail, telefone), `DELETE /api/perfil` (exclusão da conta, exige senha), `PUT /api/perfil/senha`.
+**Perfil:** `GET|PUT /api/perfil` (só nome e telefone), `POST /api/perfil/email` (exige senha e confirmação do novo endereço), `DELETE /api/perfil` (exclusão da conta, exige senha), `PUT /api/perfil/senha`.
 
 **Equipe:** `GET|POST /api/equipe`, `POST /api/equipe/convite`, `POST /api/equipe/entrar`,
 `POST /api/equipe/sair`, `POST /api/equipe/transferir-lideranca`, `DELETE /api/equipe/membro/:userId`.
@@ -176,22 +176,31 @@ o membro mais antigo é promovido.
 
 Nota final = `soma(média_do_critério × peso) / soma(pesos)`, com todos os critérios na mesma escala.
 
-Rate limit: tentativas malsucedidas contadas **por IP** na tabela `TentativaAcesso` (vale com várias
-instâncias). Padrão: 20 falhas de login por IP a cada 15 min e 5 pedidos de recuperação por hora —
-ajustável por `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`.
-O limite é folgado porque laboratórios do campus costumam sair pelo mesmo IP.
+Rate limit: tentativas persistidas na tabela `TentativaAcesso` (vale com várias instâncias), por IP
+e identificador de conta, guardado como hash. Cadastro, confirmação e reenvio de e-mail também têm
+limites próprios, configuráveis pelas variáveis em `.env.example`.
 
 ## Segurança e LGPD
 
 - **Sessão:** JWT HS256 em cookie `httpOnly`, `SameSite=Lax`, `Secure` em produção, validade de 7 dias.
   A cada requisição o usuário é relido do banco: conta bloqueada ou anonimizada perde o acesso na hora.
+  `AUTH_SECRET` deve ser aleatório, com pelo menos 32 caracteres; valores de exemplo são recusados.
+- **E-mail:** novos cadastros só entram após confirmar um token com hash, uso único e validade de 24 h.
+  A troca de endereço exige a senha atual e confirmação no novo endereço, encerrando as sessões antigas.
+  A migration preserva o acesso das contas anteriores ao recurso sem exigir confirmação retroativa.
+  Administradores provisionados e jurados convidados têm o acesso iniciado pelo fluxo administrativo.
 - **Sessões antigas:** trocar a senha (`PUT /api/perfil/senha`) ou redefini-la pelo link grava
   `User.sessoesValidasApos`; sessões emitidas antes disso deixam de valer. Quem trocou a senha continua
   logado (recebe um cookie novo).
 - **Token de redefinição:** guardado só como hash SHA-256, válido por 1 hora e consumido de forma atômica
   (duas requisições simultâneas com o mesmo token: só uma vence).
 - **CSRF:** além do `SameSite`, `route()` recusa (403) `POST/PUT/PATCH/DELETE` cujo cabeçalho `Origin`
-  não corresponda ao host da aplicação (`x-forwarded-host`, `host` ou `APP_URL`).
+  não corresponda à origem configurada em `APP_URL` ou `RAILWAY_PUBLIC_DOMAIN`; na ausência delas,
+  usa o host/protocolo encaminhado pelo proxy.
+- **Navegador:** CSP com nonce por resposta, páginas dinâmicas, proteção contra enquadramento em iframe,
+  HSTS em produção e links limitados a HTTP/HTTPS. O healthcheck não expõe contagens nem infraestrutura.
+- **Dependências:** os overrides de `deepmerge-ts` e `mysql2` fixam correções transitivas do Prisma 7.10.
+  Ao atualizar o Prisma, reavalie os overrides e execute migrations, geração do client e testes.
 - **Dados sensíveis:** respostas usam `publicUserSelect` (nunca `senhaHash`); o `test:fluxo` falha se
   algum hash ou senha aparecer em qualquer resposta.
 - **Exclusão de conta (LGPD):** `DELETE /api/perfil` com `{ senha }` anonimiza a conta — apaga nome,
@@ -215,8 +224,8 @@ Diferenças em relação aos documentos, decididas pela equipe durante a impleme
 | `getUsuarioLogado()` / `getEquipeDoUsuario()` | `getCurrentUser()` / `getCurrentUserTeam()` (+ `requireAuth`, `requireRole`) | nomes definidos pela equipe |
 | Campos em snake_case | camelCase (`senhaHash`, `termosAceitosEm`…) | convenção do Prisma/TypeScript |
 | `Criterio.nota_min/nota_max` | `Hackathon.notaMin/notaMax` | todos os critérios usam a mesma escala |
-| Rate limit por IP + usuário (5/15 min) | por IP, persistido no banco (20/15 min, configurável) | decisão da equipe; laboratórios compartilham IP |
-| Recuperação dispara e-mail | token gerado; link só no console em dev | envio de e-mail fora do escopo |
+| Rate limit por IP + usuário (5/15 min) | por IP e conta, persistido no banco, com limites configuráveis | laboratórios compartilham IP |
+| Recuperação dispara e-mail | Resend em produção; console só em desenvolvimento/CI | integração implementada |
 | Limite de 3–5 integrantes | `Hackathon.limiteMin/MaxIntegrantes` (padrão 3/5) | regras configuráveis no banco |
 
 Extras além dos documentos: `GET /api/auth/me`, `GET /api/comunicados`, `PUT /api/admin/usuarios/:id/situacao`,
@@ -263,13 +272,13 @@ healthcheck `/api/health`).
    - banco: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (ou qualquer variável da lista acima)
    - administrador inicial: `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME` — criado/promovido a cada deploy
      (a senha de uma conta existente nunca é alterada). **Não commitar a senha: o repositório é público.**
-   - recomendadas: `AUTH_SECRET` (sem ela, o segredo da sessão é derivado da URL do banco) e `APP_URL`
-     (links de recuperação e convite; se ausente, usa `RAILWAY_PUBLIC_DOMAIN`)
+   - segurança: `AUTH_SECRET` aleatório com pelo menos 32 caracteres (**obrigatório em produção**) e `APP_URL`
+     (links de recuperação e confirmação; se ausente, usa `RAILWAY_PUBLIC_DOMAIN`)
    - e-mail: `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` e `EMAIL_FROM` com um remetente de domínio
      verificado na Resend, por exemplo `HACKIF <nao-responda@seu-dominio.com>`
-   - opcionais de rate limit: `LOGIN_MAX_TENTATIVAS_POR_IP`, `LOGIN_JANELA_MINUTOS`, `RECUPERAR_SENHA_MAX_POR_IP`
+   - opcionais de rate limit: veja todos os limites disponíveis em `.env.example`
 3. Deploy. Migrations e admin rodam no pre-deploy; `/api/health` responde 200 quando o banco está acessível
-   (e mostra `tabelas`, `usuarios` e `edicoes`, para diagnosticar migrations que não rodaram).
+   e 503 quando não está, sem expor detalhes internos.
 4. Banco novo fica sem edição, e as páginas públicas ficam vazias. Crie a edição em `/admin/hackathons` ou
    preencha tudo de uma vez com conteúdo de exemplo (edição, critérios, desafios, agenda e comunicados),
    que depois pode ser editado ou apagado no admin:
@@ -278,7 +287,7 @@ healthcheck `/api/health`).
    BASE=https://seu-site ADMIN_EMAIL=... ADMIN_SENHA=... npm run conteudo:exemplo
    ```
 
-Validado contra PostgreSQL real simulando a Railway (sem `.env`, sem `DATABASE_URL` no build, só `PG*` em
-runtime, sem `AUTH_SECRET`): build, migrations, criação do admin, login e rotas de admin.
+O CI valida o fluxo contra SQLite e PostgreSQL 16, incluindo migrations, criação do admin, login e rotas
+de administração.
 
 Buscas por texto usam `contem()` de `src/lib/db.ts`, que ignora maiúsculas nos dois bancos.

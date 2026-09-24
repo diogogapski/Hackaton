@@ -12,7 +12,22 @@ export const GET = route(async (request) => {
   const { hackathonId } = parseQuery(request, hackathonIdQuerySchema);
   const hackathon = await resolveHackathon(hackathonId);
 
-  if (!hackathon.exibirEquipesPublicas) return Response.json({ publico: false, equipes: [] });
+  // Andamento em números: sempre público, porque não identifica ninguém (briefing: "um lugar único onde
+  // todo mundo possa acompanhar o andamento").
+  const [inscritas, emEspera, projetosEnviados] = await Promise.all([
+    prisma.team.count({ where: { hackathonId: hackathon.id, situacao: "INSCRITA" } }),
+    prisma.team.count({ where: { hackathonId: hackathon.id, situacao: "LISTA_ESPERA" } }),
+    prisma.projeto.count({ where: { hackathonId: hackathon.id, situacao: "ENVIADO" } }),
+  ]);
+  const resumo = {
+    equipesInscritas: inscritas,
+    limiteEquipes: hackathon.limiteEquipes,
+    equipesEmEspera: emEspera,
+    projetosEnviados,
+    resultadosPublicados: hackathon.resultadosPublicados,
+  };
+
+  if (!hackathon.exibirEquipesPublicas) return Response.json({ publico: false, resumo, equipes: [] });
 
   const equipes = await prisma.team.findMany({
     where: { hackathonId: hackathon.id, situacao: "INSCRITA" },
@@ -27,6 +42,7 @@ export const GET = route(async (request) => {
 
   return Response.json({
     publico: true,
+    resumo,
     equipes: equipes.map((e) => ({
       id: e.id,
       nome: e.nome,
