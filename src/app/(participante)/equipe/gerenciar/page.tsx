@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { tomSituacaoEquipe, useEquipe } from "@/src/components/participante/useEquipe";
@@ -45,7 +46,10 @@ export default function GerenciarEquipePage() {
       {carregado && !equipe ? (
         <Panel>
           <p className="mb-4 text-[0.9rem] text-muted">Você não participa de nenhuma equipe nesta edição.</p>
-          <Link href="/equipe" className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Criar ou entrar em uma equipe ↗</Link>
+          <Link href="/equipe" className="inline-flex h-10 items-center gap-2 bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">
+            Criar ou entrar em uma equipe
+            <ArrowUpRight size={14} strokeWidth={2} aria-hidden="true" />
+          </Link>
         </Panel>
       ) : null}
 

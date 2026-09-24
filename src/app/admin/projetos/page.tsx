@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Eye, FileText, X } from "lucide-react";
+import { Check, ExternalLink, Eye, FileText, X } from "lucide-react";
 import { useHackathon } from "@/src/components/admin/HackathonContext";
 import { useApi } from "@/src/hooks/useApi";
 import { api } from "@/src/lib/api-client";
@@ -220,7 +220,10 @@ export default function AdminProjetosPage() {
                 <td className="whitespace-nowrap">{formatarData(p.enviadoEm)}</td>
                 <td className="text-[0.8rem]">
                   {p.atribuicoes.length === 0 ? "—" : p.atribuicoes.map((a) => (
-                    <div key={a.juradoId}>{a.jurado.nome} {a.concluida ? "✓" : "…"}</div>
+                    <div key={a.juradoId} className="inline-flex items-center gap-1.5">
+                      {a.jurado.nome}
+                      {a.concluida ? <Check size={13} strokeWidth={2} className="text-accent" aria-hidden="true" /> : "…"}
+                    </div>
                   ))}
                 </td>
                 <td><Badge tone={tom[p.situacao]}>{p.situacao}</Badge></td>

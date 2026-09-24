@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, detalhesDoErro } from "@/src/lib/api-client";
@@ -56,7 +57,14 @@ export function LoginForm() {
         <Input type="password" autoComplete="current-password" required value={senha} onChange={(e) => setSenha(e.target.value)} />
       </Field>
       {erro ? <Alert title={(erro as Error).message} lines={detalhesDoErro(erro)} /> : null}
-      <Button type="submit" disabled={enviando} className="h-12">{enviando ? "Entrando…" : "Entrar ↗"}</Button>
+      <Button type="submit" disabled={enviando} className="h-12">
+        {enviando ? "Entrando…" : (
+          <>
+            Entrar
+            <ArrowUpRight size={15} strokeWidth={2} aria-hidden="true" />
+          </>
+        )}
+      </Button>
     </form>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -118,7 +119,14 @@ export default function CadastroPage() {
 
         {erro ? <div className="md:col-span-2"><Alert title={(erro as Error).message} lines={detalhesDoErro(erro)} /></div> : null}
         <div className="md:col-span-2">
-          <Button type="submit" disabled={enviando} className="h-12 w-full">{enviando ? "Criando conta…" : "Criar conta ↗"}</Button>
+          <Button type="submit" disabled={enviando} className="h-12 w-full">
+            {enviando ? "Criando conta…" : (
+              <>
+                Criar conta
+                <ArrowUpRight size={15} strokeWidth={2} aria-hidden="true" />
+              </>
+            )}
+          </Button>
         </div>
       </form>
       <AuthLinks links={[{ href: "/login", label: "Já tenho conta" }]} />

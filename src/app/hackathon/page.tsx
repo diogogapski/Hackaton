@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { Footer } from "@/src/components/layout/Footer";
 import { Header } from "@/src/components/layout/Header";
@@ -68,7 +69,10 @@ export default function HackathonPage() {
                 <h1 className="mt-5 font-display text-[2.6rem] font-semibold uppercase leading-[0.95] tracking-[-0.03em] md:text-[3.6rem]">{hackathon.nome}</h1>
                 <p className="mt-5 max-w-2xl whitespace-pre-line text-[1.05rem] text-foreground/75">{hackathon.descricao}</p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href="/login" className="inline-flex h-12 items-center bg-accent px-7 text-[0.82rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Área do participante ↗</Link>
+                  <Link href="/login" className="inline-flex h-12 items-center gap-2 bg-accent px-7 text-[0.82rem] font-bold uppercase !text-[#050706] hover:bg-foreground">
+                    Área do participante
+                    <ArrowUpRight size={15} strokeWidth={2} aria-hidden="true" />
+                  </Link>
                   {hackathon.regulamentoUrl ? (
                     <a href={hackathon.regulamentoUrl} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center border border-foreground/20 px-7 text-[0.82rem] font-bold uppercase hover:border-accent hover:text-accent">Regulamento</a>
                   ) : null}
@@ -107,7 +111,10 @@ export default function HackathonPage() {
                   ))}
                 </div>
                 {resumo.resultadosPublicados ? (
-                  <Link href="/resultados" className="mt-5 inline-flex font-mono text-[0.8rem] uppercase text-accent hover:text-foreground">Ver resultado ↗</Link>
+                  <Link href="/resultados" className="mt-5 inline-flex items-center gap-1.5 font-mono text-[0.8rem] uppercase text-accent hover:text-foreground">
+                    Ver resultado
+                    <ArrowUpRight size={13} strokeWidth={2} aria-hidden="true" />
+                  </Link>
                 ) : null}
               </Secao>
             ) : null}

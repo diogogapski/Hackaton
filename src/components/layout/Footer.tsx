@@ -1,3 +1,4 @@
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 const navegacao = [
@@ -6,7 +7,7 @@ const navegacao = [
   { label: "Desafios", href: "/desafios" },
   { label: "Agenda", href: "/agenda" },
   { label: "Resultados", href: "/resultados" },
-  { label: "Como participar", href: "/#participar" },
+  { label: "Como participar", href: "/como-participar" },
   { label: "Inscreva-se", href: "/cadastro" },
   { label: "Regulamento", href: "/regulamento" },
   { label: "FAQ", href: "/faq" },
@@ -92,7 +93,8 @@ export function Footer() {
               style={{ color: "#b6ff00" }}
             >
               <InstagramIcon />
-              @ifprpinhaisoficial ↗
+              @ifprpinhaisoficial
+              <ArrowUpRight size={13} strokeWidth={2} className="shrink-0" aria-hidden="true" />
             </a>
 
             <div className="flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">

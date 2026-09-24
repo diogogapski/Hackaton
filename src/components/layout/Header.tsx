@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,7 +10,7 @@ const navigationItems = [
   { label: "SOBRE", href: "/sobre" },
   { label: "DESAFIOS", href: "/desafios" },
   { label: "AGENDA", href: "/agenda" },
-  { label: "COMO PARTICIPAR", href: "/#participar" },
+  { label: "COMO PARTICIPAR", href: "/como-participar" },
   { label: "RESULTADOS", href: "/resultados" },
   { label: "REGULAMENTO", href: "/regulamento" },
   { label: "FAQ", href: "/faq" },
@@ -210,12 +210,7 @@ export function Header() {
   "
         >
           {cta.label}
-          <span
-            className="ml-2 font-mono !text-[#050706] text-[0.9rem] "
-            aria-hidden="true"
-          >
-            ↗
-          </span>
+          <ArrowUpRight size={14} strokeWidth={2} className="ml-2 !text-[#050706]" aria-hidden="true" />
         </Link>
 
         {/* MENU HAMBÚRGUER */}
@@ -282,12 +277,7 @@ export function Header() {
                 className="inline-flex h-[48px] items-center justify-center bg-accent px-8 font-display text-[0.82rem] font-bold leading-none tracking-[0.015em] !text-[#050706] transition-all duration-200 hover:bg-foreground"
               >
                 {cta.label}
-                <span
-                  className="ml-2 font-mono !text-[#050706] text-[0.9rem]"
-                  aria-hidden="true"
-                >
-                  ↗
-                </span>
+                <ArrowUpRight size={14} strokeWidth={2} className="ml-2 !text-[#050706]" aria-hidden="true" />
               </Link>
               {papel ? null : (
                 <Link

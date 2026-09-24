@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useApi } from "@/src/hooks/useApi";
@@ -41,7 +42,10 @@ function EquipePanel({ equipe, hackathon }: { equipe: Equipe | null; hackathon: 
     return (
       <Panel title="Sem equipe">
         <p className="mb-4 text-[0.88rem] text-muted">O projeto pertence à equipe. Crie uma equipe ou entre com um código de convite.</p>
-        <Link href="/equipe" className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Montar equipe ↗</Link>
+        <Link href="/equipe" className="inline-flex h-10 items-center gap-2 bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">
+          Montar equipe
+          <ArrowUpRight size={14} strokeWidth={2} aria-hidden="true" />
+        </Link>
       </Panel>
     );
   }
@@ -56,7 +60,10 @@ function EquipePanel({ equipe, hackathon }: { equipe: Equipe | null; hackathon: 
       <p className="mt-3 text-[0.8rem] text-muted">
         {equipe.membros.length} integrante(s) · limite {hackathon?.limiteMinIntegrantes}–{hackathon?.limiteMaxIntegrantes}
       </p>
-      <Link href="/equipe/gerenciar" className="mt-4 inline-block font-mono text-[0.72rem] uppercase text-accent hover:underline">Gerenciar equipe →</Link>
+      <Link href="/equipe/gerenciar" className="mt-4 inline-flex items-center gap-1.5 font-mono text-[0.72rem] uppercase text-accent hover:underline">
+        Gerenciar equipe
+        <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+      </Link>
     </Panel>
   );
 }

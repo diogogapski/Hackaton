@@ -341,7 +341,7 @@ export function AboutNarrative() {
                 O HackIF não entrega respostas prontas.
                 <span className="mt-3 block text-accent">Cria o ambiente para construí-las.</span>
               </p>
-              <Link href="/#participar" className="mt-9 inline-flex min-h-12 items-center gap-2 bg-accent px-7 font-display text-[0.78rem] font-semibold uppercase !text-[#050706] transition-opacity hover:opacity-85">
+              <Link href="/como-participar" className="mt-9 inline-flex min-h-12 items-center gap-2 bg-accent px-7 font-display text-[0.78rem] font-semibold uppercase !text-[#050706] transition-opacity hover:opacity-85">
                 PARTICIPAR DO HACKIF
                 <ArrowUpRight size={15} strokeWidth={1.8} aria-hidden="true" />
               </Link>

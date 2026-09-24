@@ -1,3 +1,5 @@
+import { ArrowDown } from "lucide-react";
+
 const concepts = [
   { title: "CRIAR", text: "Pensar além do óbvio." },
   { title: "COLABORAR", text: "Construir com diferentes pessoas." },
@@ -28,7 +30,9 @@ export function HackathonSection() {
               </h3>
               <p className="mt-3 font-display text-[1rem] text-foreground/58">{concept.text}</p>
               {index < concepts.length - 1 ? (
-                <p className="mt-8 font-display text-2xl text-foreground/25" aria-hidden="true">↓</p>
+                <p className="mt-8 text-foreground/25" aria-hidden="true">
+                  <ArrowDown size={24} strokeWidth={1.5} />
+                </p>
               ) : null}
             </div>
           ))}

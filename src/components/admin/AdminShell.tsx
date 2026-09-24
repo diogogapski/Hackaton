@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -34,7 +35,8 @@ function ExigeEdicao({ children }: { children: ReactNode }) {
         href="/admin/hackathons"
         className="mt-8 inline-flex h-12 items-center bg-accent px-7 font-sans text-[0.82rem] font-bold uppercase !text-[#050706] transition-colors hover:bg-foreground"
       >
-        Criar primeira edição ↗
+        Criar primeira edição
+        <ArrowUpRight size={15} strokeWidth={2} className="ml-2" aria-hidden="true" />
       </Link>
     </section>
   );

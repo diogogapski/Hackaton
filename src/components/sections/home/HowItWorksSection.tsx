@@ -1,4 +1,4 @@
-import { Code2, Send, UserPlus, Users } from "lucide-react";
+import { ArrowRight, Code2, Send, UserPlus, Users } from "lucide-react";
 
 const howItWorksSteps = [
   { number: "01", title: "ENTRE NO HACKIF", description: "Faça sua inscrição.", icon: UserPlus },
@@ -34,7 +34,9 @@ export function HowItWorksSection() {
                   <p className="mt-4 max-w-[280px] font-display text-[0.95rem] leading-6 text-foreground/58">{step.description}</p>
                 </article>
                 {index < howItWorksSteps.length - 1 ? (
-                  <div className="hidden h-[180px] items-center justify-center font-display text-2xl text-accent/55 lg:flex" aria-hidden="true">→</div>
+                  <div className="hidden h-[180px] items-center justify-center text-accent/55 lg:flex" aria-hidden="true">
+                    <ArrowRight size={24} strokeWidth={1.5} />
+                  </div>
                 ) : null}
               </div>
             );

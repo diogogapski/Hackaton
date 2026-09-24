@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { SemEquipe } from "@/src/components/participante/SemEquipe";
 import { tomSituacaoEquipe, useEquipe } from "@/src/components/participante/useEquipe";
@@ -66,7 +67,10 @@ export default function MinhaEquipePage() {
                   <dt className="font-mono text-[0.68rem] uppercase text-muted">Projeto</dt>
                   <dd>
                     {projeto.data?.projeto ? `${projeto.data.projeto.nome} · ${projeto.data.projeto.situacao}` : "ainda não cadastrado"}{" "}
-                    <Link href="/projeto" className="text-accent hover:underline">abrir →</Link>
+                    <Link href="/projeto" className="inline-flex items-center gap-1 text-accent hover:underline">
+                      abrir
+                      <ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
+                    </Link>
                   </dd>
                 </div>
               </dl>
