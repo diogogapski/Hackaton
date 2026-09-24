@@ -4,6 +4,8 @@ export type EdicaoHome = {
   status: string;
   dataInicio: string;
   dataFim: string;
+  inscricaoInicio: string | null;
+  inscricaoFim: string | null;
   local: string | null;
   limiteMinIntegrantes: number;
   limiteMaxIntegrantes: number;
@@ -34,6 +36,7 @@ export type VencedorHome = {
 };
 
 export type DadosHome = {
+  carregadoEm: number;
   edicao: EdicaoHome;
   desafio: DesafioHome | null;
   agenda: AgendaHome[];

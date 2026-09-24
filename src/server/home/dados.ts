@@ -23,12 +23,15 @@ export async function carregarDadosHome(): Promise<DadosHome | null> {
   ]);
 
   return {
+    carregadoEm: Date.now(),
     edicao: {
       nome: hackathon.nome,
       descricao: hackathon.descricao,
       status: hackathon.status,
       dataInicio: hackathon.dataInicio.toISOString(),
       dataFim: hackathon.dataFim.toISOString(),
+      inscricaoInicio: hackathon.inscricaoInicio?.toISOString() ?? null,
+      inscricaoFim: hackathon.inscricaoFim?.toISOString() ?? null,
       local: hackathon.local,
       limiteMinIntegrantes: hackathon.limiteMinIntegrantes,
       limiteMaxIntegrantes: hackathon.limiteMaxIntegrantes,
