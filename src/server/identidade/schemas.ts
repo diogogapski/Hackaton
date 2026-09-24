@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const senha = z.string().min(8, "A senha deve ter pelo menos 8 caracteres").max(128);
-const email = z.email().transform((v) => v.trim().toLowerCase());
+export const emailSchema = z.email().transform((v) => v.trim().toLowerCase());
 const nome = z.string().trim().min(2).max(120);
 const aceiteTermos = z.literal(true, { error: "É obrigatório aceitar os termos" });
 
@@ -21,7 +21,7 @@ export function cpfValido(valor: string) {
 
 export const registerAlunoSchema = z.object({
   nome,
-  email,
+  email: emailSchema,
   senha,
   matricula: z.string().trim().min(3).max(30),
   curso: z.string().trim().min(2).max(120),
@@ -30,7 +30,7 @@ export const registerAlunoSchema = z.object({
 
 export const registerServidorSchema = z.object({
   nome,
-  email,
+  email: emailSchema,
   senha,
   siape: z.string().trim().min(3).max(20),
   aceiteTermos,
@@ -38,7 +38,7 @@ export const registerServidorSchema = z.object({
 
 export const registerExternoSchema = z.object({
   nome,
-  email,
+  email: emailSchema,
   senha,
   vinculo: z.enum(["EGRESSO", "EXTERNO"]),
   // CPF opcional até a comissão decidir (LGPD)
@@ -56,7 +56,10 @@ export const loginSchema = z.object({
   senha: z.string().min(1),
 });
 
-export const recuperarSenhaSchema = z.object({ email });
+export const recuperarSenhaSchema = z.object({ email: emailSchema });
+
+export const verificarEmailSchema = z.object({ token: z.string().min(10) });
+export const reenviarVerificacaoSchema = z.object({ email: emailSchema });
 
 export const redefinirSenhaSchema = z.object({
   token: z.string().min(10),
@@ -66,8 +69,12 @@ export const redefinirSenhaSchema = z.object({
 // strictObject: rejeita matricula/siape/cpf/papel etc.
 export const perfilUpdateSchema = z.strictObject({
   nome: nome.optional(),
-  email: email.optional(),
   telefone: z.string().trim().max(30).nullable().optional(),
+});
+
+export const alterarEmailSchema = z.strictObject({
+  novoEmail: emailSchema,
+  senhaAtual: z.string().min(1),
 });
 
 export const excluirContaSchema = z.object({

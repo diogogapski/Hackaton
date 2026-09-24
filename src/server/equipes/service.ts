@@ -3,11 +3,12 @@ import { prisma } from "@/src/lib/db";
 import { badRequest, conflict, forbidden, notFound } from "@/src/lib/http";
 import { teamWithMembersInclude, type CurrentUser } from "@/src/lib/auth";
 import { inscricoesAbertas, resolveHackathon } from "@/src/server/hackathon/atual";
-import type { Prisma } from "@/src/generated/prisma/client";
+import { Prisma } from "@/src/generated/prisma/client";
 
 type Tx = Prisma.TransactionClient;
 
 const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const chaveMembroAtivo = (userId: string, hackathonId: string) => `${userId}:${hackathonId}`;
 
 export function gerarCodigoConvite(tamanho = 8) {
   const bytes = randomBytes(tamanho);
@@ -18,7 +19,22 @@ export const buscarEquipe = (teamId: string) =>
   prisma.team.findUnique({ where: { id: teamId }, include: teamWithMembersInclude });
 
 async function membroAtivo(tx: Tx, userId: string, hackathonId: string) {
-  return tx.teamMember.findFirst({ where: { userId, saiuEm: null, team: { hackathonId } } });
+  return tx.teamMember.findUnique({ where: { ativoKey: chaveMembroAtivo(userId, hackathonId) } });
+}
+
+async function transacaoEquipe<T>(operacao: (tx: Tx) => Promise<T>) {
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    try {
+      return await prisma.$transaction(operacao, { isolationLevel: "Serializable" });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034" && tentativa < 2) continue;
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw conflict("Você já participa de uma equipe nesta edição");
+      }
+      throw error;
+    }
+  }
+  throw conflict("A equipe foi alterada ao mesmo tempo; tente novamente");
 }
 
 /**
@@ -98,7 +114,7 @@ export async function criarEquipe(user: CurrentUser, nome: string, hackathonId?:
   const hackathon = await resolveHackathon(hackathonId);
   if (!inscricoesAbertas(hackathon)) throw badRequest("Inscrições encerradas para esta edição");
 
-  const team = await prisma.$transaction(async (tx) => {
+  const team = await transacaoEquipe(async (tx) => {
     if (await membroAtivo(tx, user.id, hackathon.id)) throw conflict("Você já participa de uma equipe nesta edição");
 
     const created = await tx.team.create({
@@ -107,7 +123,7 @@ export async function criarEquipe(user: CurrentUser, nome: string, hackathonId?:
         hackathonId: hackathon.id,
         liderId: user.id,
         codigoConvite: gerarCodigoConvite(),
-        membros: { create: { userId: user.id } },
+        membros: { create: { userId: user.id, ativoKey: chaveMembroAtivo(user.id, hackathon.id) } },
       },
     });
     await atualizarSituacao(tx, created.id);
@@ -140,7 +156,7 @@ export async function entrarComCodigo(user: CurrentUser, codigo: string) {
   if (team.situacao === "DESCLASSIFICADA") throw badRequest("Equipe desclassificada");
   if (!inscricoesAbertas(team.hackathon)) throw badRequest("Inscrições encerradas para esta edição");
 
-  await prisma.$transaction(async (tx) => {
+  await transacaoEquipe(async (tx) => {
     if (await membroAtivo(tx, user.id, team.hackathonId)) throw conflict("Você já participa de uma equipe nesta edição");
 
     const ativos = await tx.teamMember.count({ where: { teamId: team.id, saiuEm: null } });
@@ -148,7 +164,9 @@ export async function entrarComCodigo(user: CurrentUser, codigo: string) {
       throw conflict(`Equipe completa (máximo de ${team.hackathon.limiteMaxIntegrantes} integrantes)`);
     }
 
-    await tx.teamMember.create({ data: { teamId: team.id, userId: user.id } });
+    await tx.teamMember.create({
+      data: { teamId: team.id, userId: user.id, ativoKey: chaveMembroAtivo(user.id, team.hackathonId) },
+    });
     if (!team.liderId) await tx.team.update({ where: { id: team.id }, data: { liderId: user.id } });
     await atualizarSituacao(tx, team.id);
   });
@@ -160,7 +178,7 @@ async function desligarMembro(tx: Tx, teamId: string, userId: string) {
   const membro = await tx.teamMember.findFirst({ where: { teamId, userId, saiuEm: null } });
   if (!membro) throw notFound("Membro não encontrado na equipe");
 
-  await tx.teamMember.update({ where: { id: membro.id }, data: { saiuEm: new Date() } });
+  await tx.teamMember.update({ where: { id: membro.id }, data: { saiuEm: new Date(), ativoKey: null } });
 
   const team = await tx.team.findUniqueOrThrow({ where: { id: teamId } });
   if (team.liderId === userId) await promoverProximoLider(tx, teamId);

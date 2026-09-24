@@ -2,7 +2,7 @@ import { prisma } from "@/src/lib/db";
 import { HttpError, parseBody, route, unauthorized } from "@/src/lib/http";
 import { hashPassword, verifyPassword } from "@/src/lib/auth/password";
 import { createSession } from "@/src/lib/auth/session";
-import { clientIp, exigirDentroDoLimite, registrarTentativa } from "@/src/lib/auth/rate-limit";
+import { clientIp, exigirDentroDoLimite, rateLimitKey, registrarTentativa } from "@/src/lib/auth/rate-limit";
 import { publicUserSelect } from "@/src/lib/auth";
 import { loginSchema, onlyDigits } from "@/src/server/identidade/schemas";
 
@@ -28,7 +28,8 @@ export const POST = route(async (request) => {
   const { identificador, vinculo, senha } = await parseBody(request, loginSchema);
 
   const ip = clientIp(request);
-  await exigirDentroDoLimite("login", ip);
+  const conta = rateLimitKey(identificador);
+  await Promise.all([exigirDentroDoLimite("login", ip), exigirDentroDoLimite("login-conta", conta)]);
 
   const where = whereDoIdentificador(identificador, vinculo);
   const user = where ? await prisma.user.findFirst({ where }) : null;
@@ -39,10 +40,11 @@ export const POST = route(async (request) => {
   const vinculoConfere = !vinculo || identificador.includes("@") || (user && grupo(user.vinculo) === grupo(vinculo));
 
   if (!user || !senhaOk || !vinculoConfere) {
-    await registrarTentativa("login", ip);
+    await Promise.all([registrarTentativa("login", ip), registrarTentativa("login-conta", conta)]);
     throw unauthorized("Credenciais inválidas");
   }
   if (user.situacao !== "ATIVO") throw new HttpError(403, "Conta bloqueada");
+  if (!user.emailVerificadoEm) throw new HttpError(403, "Confirme seu e-mail antes de entrar");
 
   await createSession(user.id);
 

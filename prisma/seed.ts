@@ -26,8 +26,8 @@ async function main() {
   const usuario = (email: string, nome: string, vinculo: Vinculo, papel: Papel, extra: object = {}) =>
     prisma.user.upsert({
       where: { email },
-      update: {},
-      create: { email, nome, vinculo, papel, senhaHash, termosAceitosEm: new Date(), ...extra },
+      create: { email, nome, vinculo, papel, senhaHash, emailVerificadoEm: new Date(), termosAceitosEm: new Date(), ...extra },
+      update: { emailVerificadoEm: new Date() },
     });
 
   const admin = await usuario("admin@hackif.dev", "Admin HackIF", "SERVIDOR", "ADMIN", { siape: "0000001" });
@@ -104,7 +104,9 @@ async function main() {
         liderId: aluno.id,
         situacao: "INSCRITA",
         codigoConvite: "HACKIF01",
-        membros: { create: [{ userId: aluno.id }, { userId: aluna2.id }, { userId: servidor.id }] },
+        membros: {
+          create: [aluno, aluna2, servidor].map((u) => ({ userId: u.id, ativoKey: `${u.id}:${hackathon.id}` })),
+        },
         projeto: {
           create: {
             hackathonId: hackathon.id,

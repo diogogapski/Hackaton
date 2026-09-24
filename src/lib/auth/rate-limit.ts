@@ -1,7 +1,9 @@
-// Rate limit por IP persistido no banco (tabela TentativaAcesso): vale com várias
-// instâncias e sobrevive a reinícios. Só tentativas malsucedidas são registradas.
+// Rate limit persistido no banco (tabela TentativaAcesso): vale com várias
+// instâncias e sobrevive a reinícios.
 import { prisma } from "@/src/lib/db";
 import { HttpError } from "@/src/lib/http";
+import { createHash } from "node:crypto";
+import { isIP } from "node:net";
 
 type Limite = { max: number; janelaMinutos: number };
 
@@ -16,8 +18,28 @@ export const LIMITES = {
     max: numeroEnv("LOGIN_MAX_TENTATIVAS_POR_IP", 20),
     janelaMinutos: numeroEnv("LOGIN_JANELA_MINUTOS", 15),
   },
+  "login-conta": {
+    max: numeroEnv("LOGIN_MAX_TENTATIVAS_POR_CONTA", 30),
+    janelaMinutos: 60,
+  },
+  cadastro: {
+    max: numeroEnv("CADASTRO_MAX_POR_IP", 50),
+    janelaMinutos: 60,
+  },
   "recuperar-senha": {
     max: numeroEnv("RECUPERAR_SENHA_MAX_POR_IP", 5),
+    janelaMinutos: 60,
+  },
+  "recuperar-senha-conta": {
+    max: numeroEnv("RECUPERAR_SENHA_MAX_POR_CONTA", 5),
+    janelaMinutos: 60,
+  },
+  "verificar-email": {
+    max: numeroEnv("VERIFICAR_EMAIL_MAX_POR_IP", 5),
+    janelaMinutos: 60,
+  },
+  "confirmar-email": {
+    max: numeroEnv("CONFIRMAR_EMAIL_MAX_POR_IP", 20),
     janelaMinutos: 60,
   },
 } satisfies Record<string, Limite>;
@@ -45,9 +67,10 @@ export async function registrarTentativa(acao: AcaoLimitada, ip: string) {
 }
 
 export function clientIp(request: Request) {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "local"
-  );
+  const encaminhados = request.headers.get("x-forwarded-for")?.split(",").map((ip) => ip.trim()).filter(Boolean) ?? [];
+  const candidatos = [...encaminhados.reverse(), request.headers.get("x-real-ip") ?? ""];
+  return candidatos.find((ip) => isIP(ip)) ?? "local";
 }
+
+/** Chave opaca para limitar uma conta sem guardar e-mail, matrícula ou CPF na tabela de tentativas. */
+export const rateLimitKey = (valor: string) => createHash("sha256").update(valor.trim().toLowerCase()).digest("hex");

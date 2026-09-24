@@ -46,8 +46,7 @@ export default function CadastroPage() {
 
     try {
       await api(`/api/auth/register/${tipo}`, { method: "POST", body: corpo });
-      router.push("/dashboard");
-      router.refresh();
+      router.push(`/verificar-email?email=${encodeURIComponent(form.email)}`);
     } catch (err) {
       setErro(err);
       setEnviando(false);

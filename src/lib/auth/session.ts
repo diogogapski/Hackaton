@@ -1,25 +1,25 @@
-import { createHash } from "node:crypto";
 import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
-import { resolverDatabaseUrl } from "@/src/lib/database-url";
 
 export const SESSION_COOKIE = "hackif_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 let chave: Uint8Array | undefined;
 
-/**
- * AUTH_SECRET assina as sessões. Se não for configurada, deriva um segredo estável da URL do PostgreSQL
- * (que contém a senha do banco e só a infraestrutura conhece), para o deploy funcionar sem configuração.
- * Trocar a senha do banco, nesse caso, desloga todo mundo.
- */
 function secret() {
   if (chave) return chave;
-  let value = process.env.AUTH_SECRET;
-  if (!value) {
-    const url = resolverDatabaseUrl();
-    if (!url.startsWith("postgres") || !/:[^@/]+@/.test(url)) throw new Error("AUTH_SECRET não definida");
-    value = createHash("sha256").update(`hackif-sessao:${url}`).digest("base64url");
+  let value = process.env.AUTH_SECRET?.trim();
+  if (!value && process.env.NODE_ENV !== "production") {
+    value = "hackif-desenvolvimento-local-nao-usar-em-producao";
+  }
+  if (!value) throw new Error("AUTH_SECRET é obrigatória em produção");
+  const exemplos = [
+    "troque-este-valor",
+    "gere-uma-chave-aleatoria-com-pelo-menos-32-caracteres",
+    "hackif-desenvolvimento-local-nao-usar-em-producao",
+  ];
+  if (process.env.NODE_ENV === "production" && (value.length < 32 || exemplos.includes(value))) {
+    throw new Error("AUTH_SECRET precisa ter pelo menos 32 caracteres e não pode ser o valor de exemplo");
   }
   chave = new TextEncoder().encode(value);
   return chave;

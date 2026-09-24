@@ -1,5 +1,5 @@
 import { prisma } from "@/src/lib/db";
-import { badRequest, conflict, parseBody, route } from "@/src/lib/http";
+import { badRequest, parseBody, route } from "@/src/lib/http";
 import { publicUserSelect, requireAuth } from "@/src/lib/auth";
 import { verifyPassword } from "@/src/lib/auth/password";
 import { destroySession } from "@/src/lib/auth/session";
@@ -14,11 +14,6 @@ export const GET = route(async () => {
 export const PUT = route(async (request) => {
   const user = await requireAuth();
   const data = await parseBody(request, perfilUpdateSchema);
-
-  if (data.email && data.email !== user.email) {
-    const existe = await prisma.user.findUnique({ where: { email: data.email }, select: { id: true } });
-    if (existe) throw conflict("E-mail já está em uso");
-  }
 
   const updated = await prisma.user.update({ where: { id: user.id }, data, select: publicUserSelect });
   return Response.json({ user: updated });

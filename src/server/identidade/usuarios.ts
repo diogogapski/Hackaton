@@ -27,6 +27,7 @@ export async function anonimizarConta(userId: string) {
   await prisma.$transaction(async (tx) => {
     await desligarDeTodasAsEquipes(tx, userId);
     await tx.passwordReset.deleteMany({ where: { userId } });
+    await tx.emailVerification.deleteMany({ where: { userId } });
     await tx.user.update({
       where: { id: userId },
       data: {
@@ -37,6 +38,7 @@ export async function anonimizarConta(userId: string) {
         cpf: null,
         curso: null,
         telefone: null,
+        emailVerificadoEm: null,
         senhaHash,
         situacao: "BLOQUEADO",
         anonimizadoEm: new Date(),
