@@ -38,11 +38,13 @@ function useSessao() {
 }
 
 function HeaderBrand() {
+  const anoAtual = new Date().getFullYear();
+
   return (
     <Link
       href="/"
       className="group flex shrink-0 items-center gap-4"
-      aria-label="HACKIF 2026 - Página inicial"
+      aria-label={`HACKIF ${anoAtual} - Página inicial`}
     >
       <div className="flex items-center gap-2">
         <span
@@ -81,7 +83,7 @@ function HeaderBrand() {
     text-accent
   "
       >
-        {"//2026"}
+        {`//${anoAtual}`}
       </span>
     </Link>
   );

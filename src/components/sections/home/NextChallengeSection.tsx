@@ -1,19 +1,32 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import type { DesafioHome } from "./types";
+import { RegistrationStatusPanel } from "./RegistrationStatusPanel";
+import type { DesafioHome, EdicaoHome } from "./types";
 
-export function NextChallengeSection({ desafio }: { desafio: DesafioHome | null }) {
+export function NextChallengeSection({ desafio, edicao, agoraInicial }: { desafio: DesafioHome | null; edicao: EdicaoHome | null; agoraInicial: number }) {
   return (
     <section id="desafios" className="relative overflow-hidden border-t border-foreground/10 bg-background py-24 lg:py-32">
       <div className="absolute inset-0 opacity-35" aria-hidden="true" style={{ backgroundImage: "linear-gradient(rgba(182,255,0,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(182,255,0,0.025) 1px, transparent 1px)", backgroundSize: "84px 84px" }} />
       <div className="relative mx-auto max-w-[1440px] px-6 md:px-10">
-        <p className="font-display text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-foreground/55"><span className="text-accent">03 //</span> PRÓXIMO DESAFIO</p>
+        <p className="font-display text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-foreground/55"><span className="text-accent">03 //</span> {desafio ? "DESAFIO DISPONÍVEL" : "PRÓXIMO DESAFIO"}</p>
         <div className="mt-7 grid gap-8 lg:grid-cols-[0.58fr_0.42fr] lg:items-end">
-          <h2 className="font-display text-[clamp(2.25rem,5vw,5.4rem)] font-semibold uppercase leading-[0.98] tracking-0">
-            <span className="block text-foreground">O PRÓXIMO PROBLEMA</span>
-            <span className="block text-accent">AINDA ESTÁ POR VIR._</span>
-          </h2>
-          <p className="max-w-[520px] font-display text-base leading-7 text-foreground/64 md:text-[1.05rem] lg:justify-self-end">Novos desafios serão publicados aqui. Prepare sua equipe. A próxima ideia pode começar com vocês.</p>
+          {desafio ? (
+            <h2 className="font-display text-[clamp(2.25rem,5vw,5.4rem)] font-semibold uppercase leading-[0.98] tracking-0">
+              <span className="block text-foreground">TEM UM PROBLEMA</span>
+              <span className="block text-foreground">ESPERANDO POR</span>
+              <span className="block text-accent">UMA SOLUÇÃO._</span>
+            </h2>
+          ) : (
+            <h2 className="font-display text-[clamp(2.25rem,5vw,5.4rem)] font-semibold uppercase leading-[0.98] tracking-0">
+              <span className="block text-foreground">O PRÓXIMO PROBLEMA</span>
+              <span className="block text-accent">AINDA ESTÁ POR VIR._</span>
+            </h2>
+          )}
+          <p className="max-w-[520px] font-display text-base leading-7 text-foreground/64 md:text-[1.05rem] lg:justify-self-end">
+            {desafio
+              ? "O próximo desafio já está disponível. Reúna sua equipe e descubra o que vocês vão construir."
+              : "Novos desafios serão publicados aqui."}
+          </p>
         </div>
         <div className="relative mt-16 min-h-[420px] border border-foreground/12 bg-background/92 p-6 md:p-10 lg:p-12">
           <span className="absolute left-0 top-0 h-8 w-8 border-l border-t border-accent/45" aria-hidden="true" />
@@ -46,6 +59,14 @@ export function NextChallengeSection({ desafio }: { desafio: DesafioHome | null 
             </div>
           </div>
         </div>
+        {desafio && edicao ? (
+          <RegistrationStatusPanel
+            inscricaoInicio={edicao.inscricaoInicio}
+            inscricaoFim={edicao.inscricaoFim}
+            inscricoesAbertas={edicao.inscricoesAbertas}
+            agoraInicial={agoraInicial}
+          />
+        ) : null}
       </div>
     </section>
   );

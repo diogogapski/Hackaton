@@ -21,7 +21,7 @@ export default async function Home() {
       <main aria-label="Conteúdo principal">
         <Hero edicao={dados?.edicao ?? null} />
         <ConceptSection />
-        <NextChallengeSection desafio={dados?.desafio ?? null} />
+        <NextChallengeSection desafio={dados?.desafio ?? null} edicao={dados?.edicao ?? null} agoraInicial={dados?.carregadoEm ?? 0} />
         <AgendaPreviewSection agenda={dados?.agenda ?? []} />
         <WinnersSection winners={dados?.vencedores ?? []} />
         <HowItWorksSection />

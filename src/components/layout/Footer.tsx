@@ -43,6 +43,8 @@ function InstagramIcon() {
 }
 
 export function Footer() {
+  const anoAtual = new Date().getFullYear();
+
   return (
     <footer className="border-t border-accent/18 bg-background">
       <div className="mx-auto max-w-[1440px] px-6 py-6 md:px-10 md:py-7">
@@ -51,7 +53,7 @@ export function Footer() {
             <p className="font-display text-[2rem] font-semibold leading-none text-foreground">
               HACKIF{" "}
               <span className="ml-1 font-mono text-[0.88rem] text-accent">
-                {"//2026"}
+                {`//${anoAtual}`}
               </span>
             </p>
             <p className="mt-3 max-w-[360px] font-display text-[0.9rem] leading-5 text-foreground/58">
