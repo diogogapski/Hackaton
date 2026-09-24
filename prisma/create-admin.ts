@@ -25,7 +25,7 @@ async function main() {
 
   const existente = await prisma.user.findUnique({ where: { email } });
   if (existente) {
-    await prisma.user.update({ where: { email }, data: { papel: "ADMIN", situacao: "ATIVO" } });
+    await prisma.user.update({ where: { email }, data: { papel: "ADMIN", situacao: "ATIVO", emailVerificadoEm: new Date() } });
     console.log(`Usuário ${email} promovido a ADMIN`);
     return;
   }
@@ -36,6 +36,7 @@ async function main() {
       nome,
       vinculo: "SERVIDOR",
       papel: "ADMIN",
+      emailVerificadoEm: new Date(),
       senhaHash: await bcrypt.hash(senha, 10),
       termosAceitosEm: new Date(),
     },

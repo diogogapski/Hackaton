@@ -1,7 +1,7 @@
 import { prisma } from "@/src/lib/db";
 import { parseBody, route } from "@/src/lib/http";
 import { createToken } from "@/src/lib/auth/password";
-import { clientIp, exigirDentroDoLimite, registrarTentativa } from "@/src/lib/auth/rate-limit";
+import { clientIp, exigirDentroDoLimite, rateLimitKey, registrarTentativa } from "@/src/lib/auth/rate-limit";
 import { recuperarSenhaSchema } from "@/src/server/identidade/schemas";
 import {
   ErroConfiguracaoEmail,
@@ -28,12 +28,22 @@ export const POST = route(async (request) => {
   }
 
   const ip = clientIp(request);
-  await exigirDentroDoLimite("recuperar-senha", ip);
-  await registrarTentativa("recuperar-senha", ip);
+  const conta = rateLimitKey(email);
+  await Promise.all([
+    exigirDentroDoLimite("recuperar-senha", ip),
+    exigirDentroDoLimite("recuperar-senha-conta", conta),
+  ]);
+  await Promise.all([
+    registrarTentativa("recuperar-senha", ip),
+    registrarTentativa("recuperar-senha-conta", conta),
+  ]);
 
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, nome: true, email: true, situacao: true } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, nome: true, email: true, situacao: true, emailVerificadoEm: true },
+  });
 
-  if (user && user.situacao === "ATIVO") {
+  if (user && user.situacao === "ATIVO" && user.emailVerificadoEm) {
     const { token, tokenHash } = createToken();
     await prisma.$transaction([
       prisma.passwordReset.updateMany({

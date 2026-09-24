@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import {
   Archivo,
   Chakra_Petch,
@@ -41,11 +42,13 @@ export const metadata: Metadata = {
   description: "1º Hackathon de Ciência da Computação do IFPR Campus Pinhais",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // A CSP usa um nonce por resposta, inclusive nas páginas públicas.
+  await connection();
   return (
     <html lang="pt-BR">
       <body

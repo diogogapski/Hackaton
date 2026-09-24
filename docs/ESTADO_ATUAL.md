@@ -50,10 +50,10 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 ## O que está pronto
 
 ### Back-end — Dev 1 (identidade e equipes)
-- Cadastro por vínculo (aluno, servidor, egresso/externo) com aceite dos termos; CPF opcional.
-- Login por matrícula, SIAPE, CPF ou e-mail; JWT em cookie httpOnly; limite de tentativas por IP.
+- Cadastro por vínculo (aluno, servidor, egresso/externo) com aceite dos termos, CPF opcional e confirmação de e-mail pela Resend.
+- Login por matrícula, SIAPE, CPF ou e-mail; JWT em cookie httpOnly; limites por IP e por conta.
 - Recuperação e redefinição de senha (Resend em produção; token com hash, 1 h, uso único e atômico).
-- Perfil com documentos bloqueados, troca de senha que derruba outras sessões e exclusão de conta (LGPD).
+- Perfil com documentos bloqueados, troca de e-mail confirmada, troca de senha que derruba outras sessões e exclusão de conta (LGPD).
 - Equipes: criar, entrar por código, convite, remover, sair, transferir liderança; 3–5 integrantes
   configuráveis; nunca sem líder. A composição congela no encerramento das inscrições, com correções
   posteriores restritas a administradores.
@@ -123,7 +123,8 @@ ADMIN_EMAIL=... ADMIN_SENHA=... npm run test:fluxo   # API ponta a ponta (~220 v
 ### Próximos passos técnicos
 1. Na Railway: serviço PostgreSQL + variáveis `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`,
    `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME` (o admin é criado no pre-deploy), `EMAIL_PROVIDER=resend`,
-   `RESEND_API_KEY`, `EMAIL_FROM` e, recomendado, `AUTH_SECRET` e `APP_URL`. Detalhes em
+   `RESEND_API_KEY`, `EMAIL_FROM`, `AUTH_SECRET` (obrigatório e aleatório, com ao menos 32 caracteres) e
+   `APP_URL`. Detalhes em
    `docs/BACKEND.md` → Deploy na Railway.
 
 ### Front (Dev Front)

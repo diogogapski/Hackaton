@@ -20,6 +20,7 @@ export const publicUserSelect = {
   id: true,
   nome: true,
   email: true,
+  emailVerificadoEm: true,
   vinculo: true,
   matricula: true,
   siape: true,
@@ -68,7 +69,12 @@ export const teamWithMembersInclude = {
   membros: {
     where: { saiuEm: null },
     orderBy: { entrouEm: "asc" },
-    include: { user: { select: { id: true, nome: true, email: true, vinculo: true, curso: true } } },
+    select: {
+      id: true,
+      userId: true,
+      entrouEm: true,
+      user: { select: { id: true, nome: true, email: true, vinculo: true, curso: true } },
+    },
   },
 } as const;
 

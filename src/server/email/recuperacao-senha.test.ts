@@ -18,6 +18,13 @@ test("produção exige credenciais da Resend", () => {
   assert.throws(() => obterConfiguracaoEmail({ NODE_ENV: "production", APP_URL: "https://hackif.dev" }), ErroConfiguracaoEmail);
 });
 
+test("produção não permite registrar tokens no console", () => {
+  assert.throws(
+    () => obterConfiguracaoEmail({ NODE_ENV: "production", EMAIL_PROVIDER: "console" }),
+    ErroConfiguracaoEmail,
+  );
+});
+
 test("produção aceita o domínio público da Railway", () => {
   assert.deepEqual(obterConfiguracaoEmail({
     NODE_ENV: "production",
