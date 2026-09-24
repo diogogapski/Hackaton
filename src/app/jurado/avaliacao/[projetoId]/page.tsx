@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -75,7 +76,10 @@ export default function AvaliacaoPage() {
 
   return (
     <>
-      <Link href="/jurado" className="font-mono text-[0.72rem] uppercase text-muted hover:text-accent">← projetos</Link>
+      <Link href="/jurado" className="inline-flex items-center gap-1.5 font-mono text-[0.72rem] uppercase text-muted hover:text-accent">
+        <ArrowLeft size={12} strokeWidth={2} aria-hidden="true" />
+        projetos
+      </Link>
       <PageHeader
         tag={`avaliacao/${data.equipe?.nome ?? ""}`}
         title={projeto.nome}
@@ -97,7 +101,10 @@ export default function AvaliacaoPage() {
             </div>
             <div className="mt-4 grid gap-1 text-[0.88rem]">
               {[...projeto.links.map((l) => ({ nome: l.tipo, url: l.url })), ...projeto.arquivos].map((l) => (
-                <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="text-accent hover:underline">{l.nome} ↗</a>
+                <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-accent hover:underline">
+                  {l.nome}
+                  <ArrowUpRight size={13} strokeWidth={2} aria-hidden="true" />
+                </a>
               ))}
             </div>
           </Panel>

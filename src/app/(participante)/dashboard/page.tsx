@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { tomSituacaoEquipe, useEquipe } from "@/src/components/participante/useEquipe";
@@ -67,7 +68,10 @@ export default function DashboardPage() {
               <p className="font-mono text-[0.68rem] uppercase tracking-[0.1em] text-accent">Próximo passo</p>
               <p className="mt-1 text-[1rem]">{passo.texto}</p>
             </div>
-            <Link href={passo.href} className="inline-flex h-10 items-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">{passo.rotulo} ↗</Link>
+            <Link href={passo.href} className="inline-flex h-10 items-center gap-2 bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">
+              {passo.rotulo}
+              <ArrowUpRight size={14} strokeWidth={2} aria-hidden="true" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -94,7 +98,15 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-            <Panel title="Comunicados" actions={<Link href="/agenda" className="font-mono text-[0.72rem] uppercase text-accent hover:underline">agenda completa →</Link>}>
+            <Panel
+              title="Comunicados"
+              actions={(
+                <Link href="/agenda" className="inline-flex items-center gap-1.5 font-mono text-[0.72rem] uppercase text-accent hover:underline">
+                  agenda completa
+                  <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+                </Link>
+              )}
+            >
               {comunicados.data?.comunicados.length === 0 ? <Empty>Nenhum comunicado</Empty> : null}
               <div className="grid gap-4">
                 {comunicados.data?.comunicados.slice(0, 4).map((c) => (

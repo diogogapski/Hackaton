@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import { Footer } from "@/src/components/layout/Footer";
 import { Header } from "@/src/components/layout/Header";
 import { useApi } from "@/src/hooks/useApi";
@@ -31,7 +32,8 @@ export default function RegulamentoPage() {
               rel="noreferrer"
               className="mb-8 inline-flex h-12 items-center bg-accent px-7 text-[0.82rem] font-bold uppercase !text-[#050706] hover:bg-foreground"
             >
-              Abrir documento oficial ↗
+              Abrir documento oficial
+              <ArrowUpRight size={15} strokeWidth={2} className="ml-2" aria-hidden="true" />
             </a>
           ) : null}
           {h?.regulamentoTexto ? (

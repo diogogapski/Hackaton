@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { api, detalhesDoErro } from "@/src/lib/api-client";
@@ -28,7 +29,10 @@ export function SemEquipe({ aoEntrar, limites }: { aoEntrar: () => void; limites
         <div className="grid content-start gap-3">
           <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-foreground/60">Criar equipe</p>
           <p className="text-[0.88rem] text-muted">Você será o líder e receberá um código para convidar os colegas.</p>
-          <Link href="/equipe/criar" className="inline-flex h-10 items-center justify-center bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">Criar equipe ↗</Link>
+          <Link href="/equipe/criar" className="inline-flex h-10 items-center justify-center gap-2 bg-accent px-5 text-[0.8rem] font-bold uppercase !text-[#050706] hover:bg-foreground">
+            Criar equipe
+            <ArrowUpRight size={14} strokeWidth={2} aria-hidden="true" />
+          </Link>
         </div>
         <form className="grid content-start gap-3" onSubmit={entrar}>
           <Field label="Entrar com código" hint="Peça o código ao líder">

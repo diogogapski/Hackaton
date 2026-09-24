@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useHackathon } from "@/src/components/admin/HackathonContext";
 import { useApi } from "@/src/hooks/useApi";
@@ -70,7 +71,12 @@ export default function AdminDashboardPage() {
 
             <Panel
               title="Comunicados recentes"
-              actions={<Link href="/admin/comunicados" className="font-mono text-[0.7rem] uppercase text-accent hover:underline">Gerenciar →</Link>}
+              actions={(
+                <Link href="/admin/comunicados" className="inline-flex items-center gap-1.5 font-mono text-[0.7rem] uppercase text-accent hover:underline">
+                  Gerenciar
+                  <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+                </Link>
+              )}
             >
               {data.comunicadosRecentes.length === 0 ? <Empty>Sem comunicados</Empty> : (
                 <ul className="grid gap-4">

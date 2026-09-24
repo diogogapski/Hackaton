@@ -1,3 +1,4 @@
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 export function PurposeSection() {
@@ -21,8 +22,9 @@ export function PurposeSection() {
             <span className="block text-accent">HACKIF //</span>
             CONSTRUA A RESPOSTA.
           </p>
-          <Link href="/#participar" className="inline-flex min-h-14 items-center bg-accent px-8 font-display text-[0.9rem] font-semibold uppercase text-background transition-colors hover:bg-foreground">
-            PARTICIPAR DO HACKIF ↗
+          <Link href="/como-participar" className="inline-flex min-h-14 items-center bg-accent px-8 font-display text-[0.9rem] font-semibold uppercase text-background transition-colors hover:bg-foreground">
+            PARTICIPAR DO HACKIF
+            <ArrowUpRight size={15} strokeWidth={2} className="ml-2" aria-hidden="true" />
           </Link>
         </div>
       </div>

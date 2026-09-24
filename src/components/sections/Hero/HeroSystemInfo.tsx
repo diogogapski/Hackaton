@@ -38,10 +38,10 @@ export function HeroSystemInfo({ edicao }: { edicao: EdicaoHome | null }) {
         />
         <div className="space-y-2">
           <p>
-            <span className="text-accent"></span> -25.42421° S
+            <span className="text-accent"></span> {"25°25'27.2\"S"}
           </p>
           <p>
-            <span className="text-accent"></span> -49.16315° W
+            <span className="text-accent"></span> {"49°09'47.3\"W"}
           </p>
         </div>
       </div>
