@@ -29,6 +29,18 @@ export default function AdminUsuariosPage() {
   for (const [k, v] of Object.entries(filtros)) if (v) params.set(k, v);
   const { data, error, loading, reload } = useApi<Resposta>(`/api/admin/usuarios?${params}`);
   const [aviso, setAviso] = useState<{ tone: "ok" | "erro"; title: string } | null>(null);
+  const [linkSenha, setLinkSenha] = useState<{ nome: string; link: string; horas: number } | null>(null);
+
+  async function gerarLinkSenha(u: { id: string; nome: string }) {
+    setAviso(null);
+    try {
+      const r = await api<{ link: string; expiraEmHoras: number }>(`/api/admin/usuarios/${u.id}/link-senha`, { method: "POST" });
+      setLinkSenha({ nome: u.nome, link: r.link, horas: r.expiraEmHoras });
+    } catch (e) {
+      setLinkSenha(null);
+      setAviso({ tone: "erro", title: (e as Error).message });
+    }
+  }
 
   const filtrar = (campo: keyof typeof filtros) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFiltros((f) => ({ ...f, [campo]: e.target.value }));
@@ -51,6 +63,21 @@ export default function AdminUsuariosPage() {
     <>
       <PageHeader tag="admin/usuarios" title="Usuários" description="Busca, papéis (participante, jurado, admin) e bloqueio de contas." />
       {aviso ? <div className="mb-4"><Alert tone={aviso.tone} title={aviso.title} /></div> : null}
+      {linkSenha ? (
+        <Panel title={`Link de nova senha · ${linkSenha.nome}`} className="mb-6 border-accent/40">
+          <p className="mb-3 text-[0.88rem] text-muted">
+            Envie este link para a pessoa (WhatsApp, e-mail pessoal…). Vale {linkSenha.horas} horas, funciona uma única vez e
+            cancela links anteriores.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Input readOnly value={linkSenha.link} aria-label="Link para definir senha" className="min-w-0 flex-1" onFocus={(e) => e.target.select()} />
+            <Button type="button" onClick={() => navigator.clipboard?.writeText(linkSenha.link).then(() => setAviso({ tone: "ok", title: "Link copiado" }))}>
+              Copiar
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setLinkSenha(null)}>Fechar</Button>
+          </div>
+        </Panel>
+      ) : null}
 
       <Panel className="mb-6">
         <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr_1fr]">
@@ -111,6 +138,11 @@ export default function AdminUsuariosPage() {
                 </td>
                 <td>{u.anonimizadoEm ? <Badge>anonimizada</Badge> : <Badge tone={u.situacao === "ATIVO" ? "ok" : "erro"}>{u.situacao}</Badge>}</td>
                 <td className="text-right">
+                  {u.anonimizadoEm || u.situacao !== "ATIVO" ? null : (
+                    <Button variant="ghost" className="mb-2 h-8 px-3 sm:mb-0 sm:mr-2" onClick={() => gerarLinkSenha(u)}>
+                      Link de senha
+                    </Button>
+                  )}
                   {u.anonimizadoEm ? null : (<Button
                     variant={u.situacao === "ATIVO" ? "danger" : "ghost"}
                     className="h-8 px-3"
