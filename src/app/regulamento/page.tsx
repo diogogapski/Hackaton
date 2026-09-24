@@ -15,7 +15,7 @@ export default function RegulamentoPage() {
   return (
     <>
       <Header />
-      <main className="mx-auto max-w-[960px] px-6 py-16 md:px-10">
+      <main className="mx-auto max-w-[1440px] px-6 py-16 md:px-10">
         <p className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-accent">{"// regulamento"}</p>
         <h1 className="mt-3 font-display text-[2.6rem] font-semibold uppercase leading-none tracking-[-0.03em] md:text-[3.4rem]">Regulamento</h1>
         {h ? <p className="mt-3 text-muted">{h.nome}</p> : null}

@@ -40,6 +40,10 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "HACKIF 2026",
   description: "1º Hackathon de Ciência da Computação do IFPR Campus Pinhais",
+  icons: {
+    icon: "/images/IFNeon.ico",
+    apple: "/images/IFNeon.png",
+  },
 };
 
 export default async function RootLayout({

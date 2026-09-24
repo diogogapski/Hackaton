@@ -7,7 +7,7 @@ import type { EdicaoHome } from "../home/types";
 export function Hero({ edicao }: { edicao: EdicaoHome | null }) {
   return (
     <section
-      className="relative overflow-hidden bg-background"
+      className="relative isolate overflow-hidden bg-background"
       aria-labelledby="hero-title"
     >
       <div
@@ -25,7 +25,7 @@ export function Hero({ edicao }: { edicao: EdicaoHome | null }) {
         aria-hidden="true"
       />
 
-      <div className="relative mx-auto max-w-[1440px] px-6 pb-8 pt-8 md:px-10 lg:pb-10 lg:pt-12">
+      <div className="relative z-10 mx-auto max-w-[1440px] px-6 pb-8 pt-8 md:px-10 lg:pb-10 lg:pt-12">
         <div className="grid gap-10 pb-8 lg:min-h-[430px] lg:grid-cols-[minmax(520px,0.48fr)_minmax(320px,0.34fr)_minmax(170px,0.18fr)] lg:gap-0">
           <HeroContent edicao={edicao} />
           <HeroVisual />
