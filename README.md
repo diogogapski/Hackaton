@@ -1,5 +1,7 @@
 # HACKIF
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Sistema web de apoio ao 1º Hackathon de Ciência da Computação do Instituto Federal do Paraná (IFPR), Campus Pinhais.
 
 **Status: desenvolvimento concluído — aguardando avaliação e homologação da banca.**
@@ -225,3 +227,7 @@ A documentação acadêmica detalhada está disponível em [docs/engenharia-soft
 ## Status do projeto
 
 **Desenvolvimento concluído — aguardando avaliação e homologação da banca do projeto acadêmico.**
+
+## Licença
+
+Este projeto está licenciado sob a [Licença MIT](LICENSE).
